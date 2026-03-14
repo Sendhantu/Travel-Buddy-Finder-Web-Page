@@ -1,3 +1,5 @@
+#Change the values in Line 74,75,76,77 before exectuing 
+
 from flask import (Flask,render_template,request,redirect,url_for,session,abort,jsonify,Response,send_file,flash)
 import pymysql
 import os
@@ -71,10 +73,10 @@ CHAT_RETENTION_DEFAULT_DAYS = 365
 CHAT_RETENTION_RESTORE_DAYS = 14
 CHAT_ALLOWED_REACTIONS = {"👍", "❤️", "😂", "🙏", "😮"}
 CHAT_MAX_SEARCH_LIMIT = 100
-DB_HOST = "localhost"
-DB_USER = "root"
-DB_NAME = "travelbuddyfinder"
-DB_PASSWORD = "Sendhan@2005"
+#DB_HOST = "localhost"
+#DB_USER = "root"
+#DB_NAME = "YOUR_DATABASE"
+#DB_PASSWORD = "YOUR_LOCAL_HOST_PASSWORD"
 app = Flask(__name__)
 SOCKETIO_ASYNC_MODE = (os.environ.get("SOCKETIO_ASYNC_MODE") or "threading").strip().lower() or "threading"
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode=SOCKETIO_ASYNC_MODE)

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Host Dashboard | Travel Buddy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ─── TOKENS ─── */
+    :root {
+      --bg:#f0ede8; --bg2:#e8e4de; --surface:#faf9f7; --surface2:#f2efe9;
+      --border:rgba(0,0,0,0.07); --muted:#8c8680; --text:#1a1714; --text2:#3d3a36;
+      --primary:#e8622a; --primary-light:#fde8dc; --primary-dark:#c44e1c;
+      --success:#2a7d4f; --success-light:#d4f0e2;
+      --danger:#c0392b;  --danger-light:#fde8e6;
+      --warning:#b45309; --warning-light:#fef3c7;
+      --info:#1d6fa4;    --info-light:#dbeafe;
+      --font-head:'Sora',sans-serif; --font-body:'DM Sans',sans-serif;
+      --radius-sm:8px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+      --shadow-sm:0 2px 8px rgba(0,0,0,0.06); --shadow-md:0 6px 20px rgba(0,0,0,0.09);
+      --shadow-lg:0 12px 32px rgba(0,0,0,0.12); --shadow-card:0 4px 16px rgba(0,0,0,0.07);
+      --focus-ring:0 0 0 3px rgba(232,98,42,0.3); --transition:.2s cubic-bezier(.4,0,.2,1);
+    }
+    :root[data-theme="dark"] {
+      --bg:#0e0d0b; --bg2:#161410; --surface:#1c1a17; --surface2:#242118;
+      --border:rgba(255,255,255,0.07); --muted:#7a7470; --text:#f0ede8; --text2:#c8c4be;
+      --primary:#f07540; --primary-light:rgba(240,117,64,0.15); --primary-dark:#e8622a;
+      --success:#34d399; --success-light:rgba(52,211,153,0.12);
+      --danger:#f87171;  --danger-light:rgba(248,113,113,0.12);
+      --warning:#fbbf24; --warning-light:rgba(251,191,36,0.12);
+      --info:#60a5fa;    --info-light:rgba(96,165,250,0.12);
+      --shadow-card:0 4px 16px rgba(0,0,0,0.4); --shadow-lg:0 12px 32px rgba(0,0,0,0.6);
+    }
+    :root[data-theme="high-contrast"] {
+      --bg:#000; --bg2:#000; --surface:#000; --surface2:#111;
+      --border:rgba(255,255,255,0.3); --muted:#aaa; --text:#fff; --text2:#ddd;
+      --primary:#ff0; --primary-light:#222200; --primary-dark:#ffd400;
+      --success:#0f0; --success-light:#002200; --danger:#f00; --danger-light:#220000;
+      --warning:#f90; --warning-light:#221100; --info:#0ff; --info-light:#002222;
+      --shadow-sm:none; --shadow-md:none; --shadow-lg:none; --shadow-card:none;
+      --focus-ring:0 0 0 3px #fff;
+    }
+
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    html,body { height:100%; }
+    body { font-family:var(--font-body); background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; line-height:1.5; }
+    a { color:inherit; text-decoration:none; }
+    button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
+    :focus-visible { outline:none; box-shadow:var(--focus-ring); border-radius:var(--radius-sm); }
+
+    /* ─── SKIP LINK ─── */
+    .skip-link { position:fixed; top:-100px; left:16px; z-index:999; background:var(--primary); color:#fff; padding:10px 18px; border-radius:var(--radius-md); font-weight:700; transition:top .2s; }
+    .skip-link:focus { top:16px; }
+
+    /* ─── TOAST ─── */
+    #toast-container { position:fixed; bottom:28px; right:28px; z-index:900; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+    .toast { background:var(--surface); color:var(--text); padding:12px 18px; border-radius:var(--radius-md); box-shadow:var(--shadow-lg); font-weight:600; font-size:14px; display:flex; align-items:center; gap:10px; animation:toastIn .3s ease forwards; pointer-events:auto; border-left:4px solid var(--primary); font-family:var(--font-body); }
+    .toast.success { border-color:var(--success); }
+    .toast.danger  { border-color:var(--danger); }
+    .toast.warning { border-color:var(--warning); }
+    @keyframes toastIn  { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
+    @keyframes toastOut { from{opacity:1;}to{opacity:0;transform:translateY(12px);} }
+
+    /* ─── HEADER ─── */
+    header.header { background:var(--surface); height:66px; padding:0 28px; display:flex; justify-content:space-between; align-items:center; gap:16px; box-shadow:var(--shadow-sm); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:40; }
+    .header-left { display:flex; align-items:center; gap:12px; }
+    .brand-logo { width:36px; height:36px; border-radius:10px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .brand-name { font-family:var(--font-head); font-size:17px; font-weight:800; }
+    .brand-name span { color:var(--primary); }
+    /* BUG FIX: nav links now have actual styles — were using class "nav-link" with no CSS */
+    nav.nav-links { display:flex; align-items:center; gap:4px; }
+    .nav-links a,
+    .nav-links .nav-btn {
+      padding:7px 13px; border-radius:var(--radius-sm); font-size:13.5px; font-weight:600;
+      color:var(--text2); transition:background var(--transition),color var(--transition);
+    }
+    .nav-links .nav-btn {
+      border:1px solid var(--border);
+      background:var(--surface);
+      line-height:1.2;
+    }
+    .nav-links a:hover,
+    .nav-links .nav-btn:hover { background:var(--surface2); color:var(--text); }
+    .nav-links a.active,
+    .nav-links .nav-btn.active { background:var(--primary-light); color:var(--primary); border-color:transparent; }
+    .nav-links a.create-btn { background:var(--primary); color:#fff; box-shadow:0 3px 10px rgba(232,98,42,.25); }
+    .nav-links a.create-btn:hover { background:var(--primary-dark); }
+    .nav-links a.logout { color:var(--danger); }
+    .nav-links a.logout:hover { background:var(--danger-light); }
+    #themeToggle { width:38px; height:38px; border-radius:var(--radius-sm); background:var(--surface2); color:var(--text); display:flex; align-items:center; justify-content:center; font-size:17px; border:1px solid var(--border); transition:background var(--transition); flex-shrink:0; }
+    #themeToggle:hover { background:var(--bg2); }
+
+    /* ─── PAGE ─── */
+    .page { max-width:1280px; margin:0 auto; padding:32px 24px 80px; }
+
+    /* ─── HERO ─── */
+    .page-hero { background:var(--surface); border-radius:var(--radius-xl); padding:28px 32px; display:flex; align-items:center; justify-content:space-between; gap:20px; box-shadow:var(--shadow-card); border:1px solid var(--border); margin-bottom:28px; position:relative; overflow:hidden; animation:cardIn .25s ease both; }
+    .page-hero::before { content:''; position:absolute; right:-40px; top:-40px; width:200px; height:200px; border-radius:50%; background:radial-gradient(circle,var(--primary-light) 0%,transparent 70%); pointer-events:none; }
+    .hero-text h1 { font-family:var(--font-head); font-size:22px; font-weight:800; margin-bottom:4px; }
+    .hero-text h1 span { color:var(--primary); }
+    .hero-text p { font-size:13.5px; color:var(--muted); }
+    .hero-date { font-size:13px; font-weight:600; color:var(--muted); background:var(--surface2); padding:6px 16px; border-radius:999px; border:1px solid var(--border); white-space:nowrap; position:relative; z-index:1; }
+
+    /* ─── STATS ─── */
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+    .stat-card { background:var(--surface); border-radius:var(--radius-lg); padding:20px 22px; border:1px solid var(--border); box-shadow:var(--shadow-card); display:flex; align-items:center; gap:16px; transition:transform var(--transition),box-shadow var(--transition); animation:cardIn .35s ease both; cursor:default; }
+    .stat-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+    .stat-card:nth-child(1){animation-delay:.05s;} .stat-card:nth-child(2){animation-delay:.10s;} .stat-card:nth-child(3){animation-delay:.15s;} .stat-card:nth-child(4){animation-delay:.20s;}
+    .stat-icon { width:46px; height:46px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+    .stat-icon.trips   { background:var(--primary-light); }
+    .stat-icon.active  { background:var(--success-light); }
+    .stat-icon.members { background:var(--info-light); }
+    .stat-icon.earn    { background:var(--warning-light); }
+    .stat-card h4 { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:3px; }
+    .stat-card .num { font-family:var(--font-head); font-size:26px; font-weight:800; line-height:1; }
+    @keyframes cardIn { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
+
+    /* ─── SECTION HEAD ─── */
+    .section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+    .section-head-left { display:flex; align-items:center; gap:10px; }
+    .section-head h2 { font-family:var(--font-head); font-size:17px; font-weight:800; }
+    .create-trip-btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:var(--radius-md); font-size:13.5px; font-weight:700; background:var(--primary); color:#fff; box-shadow:0 3px 10px rgba(232,98,42,.25); transition:all var(--transition); }
+    .create-trip-btn:hover { background:var(--primary-dark); transform:translateY(-1px); box-shadow:0 5px 14px rgba(232,98,42,.35); }
+
+    /* ─── CONTROLS BAR ─── */
+    .controls-bar { background:var(--surface2); border-bottom:1px solid var(--border); padding:12px 16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .search-wrap { flex:1; min-width:180px; position:relative; display:flex; align-items:center; }
+    .search-wrap .ico { position:absolute; left:12px; font-size:14px; color:var(--muted); pointer-events:none; }
+    .search-wrap input { width:100%; padding:8px 12px 8px 34px; border-radius:var(--radius-md); border:1px solid var(--border); background:var(--surface); color:var(--text); font-family:var(--font-body); font-size:13px; transition:box-shadow var(--transition),border-color var(--transition); }
+    .search-wrap input::placeholder { color:var(--muted); }
+    .search-wrap input:focus { box-shadow:var(--focus-ring); border-color:var(--primary); outline:none; }
+    .ctrl-select { padding:8px 11px; border-radius:var(--radius-md); border:1px solid var(--border); background:var(--surface); color:var(--text); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; }
+    .ctrl-select:focus { outline:none; box-shadow:var(--focus-ring); }
+    .ctrl-btn { display:inline-flex; align-items:center; gap:5px; padding:8px 13px; border-radius:var(--radius-md); font-size:13px; font-weight:700; border:1px solid var(--border); background:var(--surface); color:var(--text2); transition:all var(--transition); cursor:pointer; }
+    .ctrl-btn:hover { background:var(--bg2); color:var(--text); }
+    .vis-count { font-size:12px; font-weight:700; color:var(--muted); margin-left:auto; white-space:nowrap; }
+
+    /* ─── TABLE CARD ─── */
+    .table-card { background:var(--surface); border-radius:var(--radius-lg); border:1px solid var(--border); box-shadow:var(--shadow-card); overflow:hidden; animation:cardIn .4s ease both; }
+    /* BUG FIX: overflow:auto must be on the scroll wrapper, NOT on a parent with
+       position:sticky children — fixed by using separate .table-scroll div */
+    .table-scroll { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; min-width:820px; }
+    thead tr { background:linear-gradient(135deg,var(--primary),var(--primary-dark)); }
+    th { padding:12px 16px; font-family:var(--font-head); font-size:11px; font-weight:700; color:rgba(255,255,255,0.9); text-transform:uppercase; letter-spacing:.6px; text-align:left; white-space:nowrap; cursor:pointer; user-select:none; transition:background var(--transition); }
+    th:hover { background:rgba(255,255,255,0.1); }
+    th.no-sort { cursor:default; }
+    th.no-sort:hover { background:transparent; }
+    .sort-icon { margin-left:4px; opacity:.55; font-size:10px; }
+    th.sorted-asc  .sort-icon::after { content:'▲'; opacity:1; }
+    th.sorted-desc .sort-icon::after { content:'▼'; opacity:1; }
+    th:not(.sorted-asc):not(.sorted-desc) .sort-icon::after { content:'⇅'; }
+
+    tbody tr { border-bottom:1px solid var(--border); transition:background var(--transition),border-left var(--transition); border-left:3px solid transparent; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:var(--surface2); border-left-color:var(--primary); }
+    td { padding:13px 16px; font-size:13.5px; color:var(--text2); vertical-align:middle; }
+
+    /* Destination cell */
+    .dest-cell { display:flex; align-items:center; gap:10px; }
+    .trip-avatar { width:34px; height:34px; border-radius:var(--radius-sm); background:linear-gradient(135deg,var(--primary),#f5a623); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+    .dest-name { font-weight:700; color:var(--text); }
+
+    /* Members progress */
+    .members-cell { display:flex; flex-direction:column; gap:4px; }
+    .members-bar-wrap { width:80px; height:5px; background:var(--surface2); border-radius:999px; overflow:hidden; border:1px solid var(--border); }
+    .members-bar { height:100%; border-radius:999px; background:linear-gradient(90deg,var(--primary),#f5a623); transition:width .4s ease; }
+    .members-text { font-size:12px; font-weight:700; color:var(--text2); }
+
+    /* Status badges */
+    .badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap; }
+    .badge .dot { width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
+    .badge.open      { background:var(--success-light); color:var(--success); }
+    .badge.full      { background:var(--warning-light); color:var(--warning); }
+    .badge.completed { background:var(--surface2);      color:var(--muted);   border:1px solid var(--border); }
+    .badge.cancelled { background:var(--danger-light);  color:var(--danger); }
+
+    /* Row action buttons */
+    .row-actions { display:flex; gap:6px; flex-wrap:wrap; }
+    .action-btn { display:inline-flex; align-items:center; gap:4px; padding:5px 11px; border-radius:var(--radius-sm); font-size:12px; font-weight:700; border:1px solid transparent; transition:all var(--transition); white-space:nowrap; }
+    .action-btn.view    { background:var(--info-light);    color:var(--info);    border-color:rgba(29,111,164,.15); }
+    .action-btn.view:hover    { background:var(--info);    color:#fff; }
+    .action-btn.members { background:var(--success-light); color:var(--success); border-color:rgba(42,125,79,.15); }
+    .action-btn.members:hover { background:var(--success); color:#fff; }
+    .action-btn.edit    { background:var(--warning-light); color:var(--warning); border-color:rgba(180,83,9,.15); }
+    .action-btn.edit:hover    { background:var(--warning); color:#fff; }
+    .action-btn.chat    { background:var(--primary-light); color:var(--primary); border-color:rgba(232,98,42,.15); }
+    .action-btn.chat:hover    { background:var(--primary); color:#fff; }
+
+    /* Empty state */
+    .empty-row td { text-align:center; padding:64px 24px; }
+    .empty-icon  { font-size:48px; display:block; margin-bottom:14px; }
+    .empty-title { font-family:var(--font-head); font-size:18px; font-weight:800; margin-bottom:6px; }
+    .empty-sub   { font-size:14px; color:var(--muted); margin-bottom:20px; }
+    .empty-cta   { display:inline-flex; align-items:center; gap:7px; padding:10px 22px; border-radius:var(--radius-md); font-size:14px; font-weight:700; background:var(--primary); color:#fff; box-shadow:0 3px 10px rgba(232,98,42,.25); transition:all var(--transition); }
+    .empty-cta:hover { background:var(--primary-dark); transform:translateY(-1px); }
+
+    /* Table footer */
+    .table-footer { padding:11px 16px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .table-footer span { font-size:13px; color:var(--muted); font-weight:600; }
+
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+    /* Responsive */
+    @media(max-width:1024px) { .stats-row { grid-template-columns:repeat(2,1fr); } }
+    @media(max-width:640px) {
+      header.header { padding:0 16px; height:auto; flex-wrap:wrap; padding:12px 16px; gap:10px; }
+      .page { padding:20px 14px 80px; }
+      .page-hero { flex-direction:column; align-items:flex-start; padding:22px 20px; }
+      .stats-row { grid-template-columns:1fr 1fr; gap:12px; }
+      .stat-card { padding:14px; }
+      .nav-links .hide-mobile { display:none; }
+    }
+
+    @keyframes rowIn { from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);} }
+    tbody tr { animation:rowIn .22s ease both; }
+    tbody tr:nth-child(1){animation-delay:.03s;} tbody tr:nth-child(2){animation-delay:.06s;}
+    tbody tr:nth-child(3){animation-delay:.09s;} tbody tr:nth-child(4){animation-delay:.12s;}
+    tbody tr:nth-child(5){animation-delay:.15s;} tbody tr:nth-child(6){animation-delay:.18s;}
+  </style>
+</head>
+<body>
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- HEADER -->
+  <header class="header" role="banner">
+    <div class="header-left">
+      <div class="brand-logo" aria-hidden="true">🏕</div>
+      <span class="brand-name">Travel<span>Buddy</span></span>
+    </div>
+    <!-- BUG FIX: nav links now use .nav-links class which has actual CSS rules -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <nav class="nav-links" aria-label="Host navigation">
+        <button type="button" id="backBtn" class="nav-btn" aria-label="Go back">← Back</button>
+        <a href="{{ url_for('mainpage') }}" class="hide-mobile">🏠 Home</a>
+        <a href="{{ url_for('host_dashboard') }}" class="hide-mobile active" aria-current="page">Host Dashboard</a>
+        <a href="{{ url_for('create_post') }}" class="create-btn">+ Create Trip</a>
+        <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+      </nav>
+      <button id="themeToggle" aria-label="Toggle color theme">☀️</button>
+    </div>
+  </header>
+
+  <main id="mainContent" class="page" role="main">
+
+    <!-- HERO -->
+    <div class="page-hero" role="region" aria-label="Dashboard overview">
+      <div class="hero-text">
+        <h1>🏕 Host <span>Dashboard</span></h1>
+        <p>Manage your trips, track members, and monitor earnings.</p>
+      </div>
+      <div class="hero-date" id="heroDate" aria-live="polite"></div>
+    </div>
+
+    <!-- STATS -->
+    <!-- BUG FIX: stats.total_earnings guarded with default(0) to avoid crash if None -->
+    <section class="stats-row" aria-label="Host statistics">
+      <div class="stat-card">
+        <div class="stat-icon trips" aria-hidden="true">🗺️</div>
+        <div>
+          <h4>Total Trips</h4>
+          <div class="num">{{ stats.total_trips }}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon active" aria-hidden="true">✅</div>
+        <div>
+          <h4>Active Trips</h4>
+          <div class="num">{{ stats.active_trips }}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon members" aria-hidden="true">👥</div>
+        <div>
+          <h4>Total Members</h4>
+          <div class="num">{{ stats.total_members }}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon earn" aria-hidden="true">💰</div>
+        <div>
+          <h4>Total Earnings</h4>
+          <div class="num">₹{{ "%.0f"|format(stats.total_earnings|default(0)) }}</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRIPS -->
+    <section aria-labelledby="tripsHeading">
+      <div class="section-head">
+        <div class="section-head-left">
+          <h2 id="tripsHeading">📍 Your Trips</h2>
+        </div>
+        <a href="{{ url_for('create_post') }}" class="create-trip-btn">+ Create New Trip</a>
+      </div>
+
+      <div class="table-card">
+
+        <!-- CONTROLS -->
+        <div class="controls-bar" role="region" aria-label="Trip controls">
+          <div class="search-wrap">
+            <span class="ico" aria-hidden="true">🔍</span>
+            <label for="searchInput" class="sr-only">Search trips</label>
+            <input id="searchInput" type="search" placeholder="Search destination…" autocomplete="off">
+          </div>
+          <label for="statusFilter" class="sr-only">Filter by status</label>
+          <select id="statusFilter" class="ctrl-select" aria-label="Filter by status">
+            <option value="all">All Statuses</option>
+            <option value="open">Open</option>
+            <option value="full">Full</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <div style="width:1px;height:24px;background:var(--border);flex-shrink:0;" aria-hidden="true"></div>
+          <button class="ctrl-btn" id="exportBtn">⬇ Export CSV</button>
+          <button class="ctrl-btn" id="clearBtn">✕ Clear</button>
+          <span class="vis-count" id="visCount" aria-live="polite"></span>
+        </div>
+
+        <!-- TABLE -->
+        <!-- BUG FIX: removed role="table" from wrapper div — the <table> already has correct semantics -->
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th class="no-sort" scope="col">#</th>
+                <th scope="col" data-col="dest">Destination<span class="sort-icon"></span></th>
+                <th scope="col" data-col="date">Date<span class="sort-icon"></span></th>
+                <th scope="col" data-col="members">Members<span class="sort-icon"></span></th>
+                <th scope="col" data-col="status">Status<span class="sort-icon"></span></th>
+                <th scope="col" data-col="earnings">Earnings<span class="sort-icon"></span></th>
+                <th class="no-sort" scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tripsTbody">
+              {% for t in trips %}
+              <tr data-dest="{{ t.destination|lower }}"
+                  data-dest-display="{{ t.destination }}"
+                  data-status="{{ t.trip_status or 'open' }}"
+                  data-date="{{ t.travel_date_iso }}"
+                  data-members="{{ t.approved_members }}"
+                  data-maxpeople="{{ t.max_people }}"
+                  data-earnings="{{ t.earnings|default(0) }}">
+
+                <td>{{ loop.index }}</td>
+
+                <!-- Destination -->
+                <td>
+                  <div class="dest-cell">
+                    <div class="trip-avatar" aria-hidden="true">
+                      {{ t.destination[0]|upper if t.destination else '?' }}
+                    </div>
+                    <span class="dest-name">{{ t.destination }}</span>
+                  </div>
+                </td>
+
+                <!-- Date -->
+                <td>
+                  <time datetime="{{ t.travel_date_iso }}">{{ t.travel_date }}</time>
+                </td>
+
+                <!-- Members with progress bar -->
+                <td>
+                  <div class="members-cell">
+                    <span class="members-text">{{ t.approved_members }} / {{ t.max_people }}</span>
+                    <div class="members-bar-wrap">
+                      {% set pct = ((t.approved_members / t.max_people) * 100)|int if t.max_people > 0 else 0 %}
+                      <div class="members-bar" style="width:{{ pct }}%;"></div>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Status badge -->
+                <td>
+                  <span class="badge {{ t.trip_status }}" aria-label="{{ t.trip_status|capitalize }} status">
+                    <span class="dot"></span>{{ t.trip_status|capitalize }}
+                  </span>
+                </td>
+
+                <!-- Earnings -->
+                <td>
+                  <strong style="font-family:var(--font-head);color:var(--text);">
+                    ₹{{ "%.0f"|format(t.earnings|default(0)) }}
+                  </strong>
+                </td>
+
+                <!-- Actions -->
+                <td>
+                  <div class="row-actions" role="group" aria-label="Actions for {{ t.destination }}">
+                    <a class="action-btn view"    href="{{ url_for('trip_detail', post_id=t.post_id) }}" aria-label="View {{ t.destination }}">👁 View</a>
+                    <a class="action-btn members" href="{{ url_for('members', post_id=t.post_id) }}" aria-label="Members for {{ t.destination }}">👥 Members</a>
+                    <a class="action-btn edit"    href="{{ url_for('edit_trip', post_id=t.post_id) }}" aria-label="Edit {{ t.destination }}">✏ Edit</a>
+                    <a class="action-btn chat"    href="{{ url_for('chat_trip', post_id=t.post_id) }}" aria-label="Chat for {{ t.destination }}">💬 Chat</a>
+                  </div>
+                </td>
+
+              </tr>
+              {% endfor %}
+
+              {% if not trips %}
+              <tr class="empty-row">
+                <td colspan="7">
+                  <span class="empty-icon">🗺️</span>
+                  <div class="empty-title">No trips yet</div>
+                  <div class="empty-sub">Create your first trip and start hosting adventures!</div>
+                  <a href="{{ url_for('create_post') }}" class="empty-cta">+ Create First Trip</a>
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-footer">
+          <span id="footerCount">Showing 0 trips</span>
+          <span id="footerFiltered" style="color:var(--primary);"></span>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+  (function(){
+
+    /* ── THEME ── */
+    const root=document.documentElement, tBtn=document.getElementById('themeToggle');
+    const backBtn=document.getElementById('backBtn');
+    const THEMES=['default','dark','high-contrast'], ICONS={default:'☀️',dark:'🌙','high-contrast':'⚡'};
+    let current=localStorage.getItem('tb_theme')||'default';
+    function applyTheme(t){ current=t; t==='default'?root.removeAttribute('data-theme'):root.setAttribute('data-theme',t); if(tBtn)tBtn.textContent=ICONS[t]; localStorage.setItem('tb_theme',t); }
+    applyTheme(current);
+    tBtn?.addEventListener('click',()=>applyTheme(THEMES[(THEMES.indexOf(current)+1)%THEMES.length]));
+    backBtn?.addEventListener('click',()=>{
+      if(window.history.length>1) window.history.back();
+      else window.location.href="{{ url_for('mainpage') }}";
+    });
+
+    /* ── DATE ── */
+    const hd=document.getElementById('heroDate');
+    if(hd) hd.textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+    /* ── TOAST ── */
+    function toast(msg,type='info',ms=3200){
+      const c=document.getElementById('toast-container'); if(!c)return;
+      const icons={info:'ℹ️',success:'✅',danger:'❌',warning:'⚠️'};
+      const el=document.createElement('div'); el.className=`toast ${type}`;
+      el.innerHTML=`<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+      c.appendChild(el);
+      setTimeout(()=>{ el.style.animation='toastOut .3s ease forwards'; setTimeout(()=>el.remove(),300); },ms);
+    }
+
+    /* ── REFS ── */
+    const tbody       = document.getElementById('tripsTbody');
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter= document.getElementById('statusFilter');
+    const clearBtn    = document.getElementById('clearBtn');
+    const exportBtn   = document.getElementById('exportBtn');
+    const visCount    = document.getElementById('visCount');
+    const footerCount = document.getElementById('footerCount');
+    const footerFiltered = document.getElementById('footerFiltered');
+
+    if(!tbody) return;
+    function allRows(){ return Array.from(tbody.querySelectorAll('tr:not(.empty-row)')); }
+
+    /* ── FILTER ── */
+    function applyFilters(){
+      const q = searchInput?.value.toLowerCase().trim()||'';
+      const s = statusFilter?.value||'all';
+      const rows = allRows();
+      rows.forEach(r=>{
+        const matchQ = !q || r.dataset.dest.includes(q);
+        const matchS = s==='all' || r.dataset.status===s;
+        r.hidden = !(matchQ && matchS);
+      });
+      const vis = rows.filter(r=>!r.hidden);
+      const total = rows.length;
+      if(visCount)  visCount.textContent  = `${vis.length} of ${total} trips`;
+      if(footerCount) footerCount.textContent = `Showing ${vis.length} of ${total} trip${total!==1?'s':''}`;
+      const isFiltered = q || s!=='all';
+      if(footerFiltered) footerFiltered.textContent = isFiltered && vis.length<total ? `${total-vis.length} hidden by filters` : '';
+    }
+    searchInput?.addEventListener('input',  applyFilters);
+    statusFilter?.addEventListener('change', applyFilters);
+
+    /* ── CLEAR ── */
+    clearBtn?.addEventListener('click',()=>{
+      if(searchInput)  searchInput.value='';
+      if(statusFilter) statusFilter.value='all';
+      applyFilters();
+    });
+
+    /* ── SORT ── */
+    let sortCol=null, sortDir=1;
+    document.querySelectorAll('th[data-col]').forEach(th=>{
+      th.addEventListener('click',()=>{
+        const col=th.dataset.col;
+        if(sortCol===col) sortDir*=-1; else { sortCol=col; sortDir=1; }
+        document.querySelectorAll('th[data-col]').forEach(t=>t.classList.remove('sorted-asc','sorted-desc'));
+        th.classList.add(sortDir===1?'sorted-asc':'sorted-desc');
+        allRows().sort((a,b)=>{
+          let av='',bv='';
+          if(col==='dest')    { av=a.dataset.dest;    bv=b.dataset.dest; }
+          if(col==='status')  { av=a.dataset.status;  bv=b.dataset.status; }
+          if(col==='date')    { return(new Date(a.dataset.date)-new Date(b.dataset.date))*sortDir; }
+          if(col==='members') { return(parseInt(a.dataset.members)-parseInt(b.dataset.members))*sortDir; }
+          if(col==='earnings'){ return(parseFloat(a.dataset.earnings)-parseFloat(b.dataset.earnings))*sortDir; }
+          return av.localeCompare(bv)*sortDir;
+        }).forEach(r=>tbody.appendChild(r));
+      });
+    });
+
+    /* ── EXPORT CSV ── */
+    exportBtn?.addEventListener('click',()=>{
+      const rows=allRows().filter(r=>!r.hidden);
+      if(!rows.length){ toast('No data to export.','warning'); return; }
+      const headers=['#','Destination','Date','Members','Max People','Status','Earnings'];
+      const csv=[headers.join(','),...rows.map((r,i)=>[
+        i+1,
+        `"${(r.dataset.destDisplay || r.dataset.dest || '').replace(/\"/g,'\"\"')}"`,
+        r.dataset.date,
+        r.dataset.members,
+        r.dataset.maxpeople,
+        r.dataset.status,
+        r.dataset.earnings
+      ].join(','))].join('\n');
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+      a.download=`trips-${Date.now()}.csv`; a.click(); URL.revokeObjectURL(a.href);
+      toast(`Exported ${rows.length} trips.`,'success');
+    });
+
+    /* ── INIT ── */
+    applyFilters();
+
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Travel Buddy | Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:            #f0ede8;
+      --bg2:           #e8e4de;
+      --surface:       #faf9f7;
+      --surface2:      #f2efe9;
+      --border:        rgba(0,0,0,0.07);
+      --muted:         #8c8680;
+      --text:          #1a1714;
+      --text2:         #3d3a36;
+
+      --primary:       #e8622a;
+      --primary-light: #fde8dc;
+      --primary-dark:  #c44e1c;
+
+      --success:       #2a7d4f;
+      --success-light: #d4f0e2;
+      --danger:        #c0392b;
+      --danger-light:  #fde8e6;
+      --warning:       #b45309;
+      --warning-light: #fef3c7;
+      --info:          #1d6fa4;
+      --info-light:    #dbeafe;
+
+      --badge-open-bg: #d4f0e2; --badge-open-fg: #166534;
+      --badge-full-bg: #fde8e6; --badge-full-fg: #991b1b;
+
+      --font-head: 'Sora', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+
+      --shadow-sm:  0 2px 8px rgba(0,0,0,0.06);
+      --shadow-md:  0 6px 20px rgba(0,0,0,0.09);
+      --shadow-lg:  0 12px 32px rgba(0,0,0,0.12);
+      --shadow-card:0 4px 16px rgba(0,0,0,0.07);
+
+      --focus-ring: 0 0 0 3px rgba(232,98,42,0.3);
+      --transition: .2s cubic-bezier(.4,0,.2,1);
+    }
+
+    :root[data-theme="dark"]{
+      --bg:            #0e0d0b;
+      --bg2:           #161410;
+      --surface:       #1c1a17;
+      --surface2:      #242118;
+      --border:        rgba(255,255,255,0.07);
+      --muted:         #7a7470;
+      --text:          #f0ede8;
+      --text2:         #c8c4be;
+
+      --primary:       #f07540;
+      --primary-light: rgba(240,117,64,0.15);
+      --primary-dark:  #e8622a;
+
+      --success:       #34d399;  --success-light: rgba(52,211,153,0.12);
+      --danger:        #f87171;  --danger-light:  rgba(248,113,113,0.12);
+      --warning:       #fbbf24;  --warning-light: rgba(251,191,36,0.12);
+      --info:          #60a5fa;  --info-light:    rgba(96,165,250,0.12);
+
+      --badge-open-bg: rgba(52,211,153,0.12); --badge-open-fg: #6ee7b7;
+      --badge-full-bg: rgba(248,113,113,0.12);--badge-full-fg: #fca5a5;
+
+      --shadow-sm:  0 2px 8px rgba(0,0,0,0.4);
+      --shadow-md:  0 6px 20px rgba(0,0,0,0.5);
+      --shadow-lg:  0 12px 32px rgba(0,0,0,0.6);
+      --shadow-card:0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    :root[data-theme="high-contrast"]{
+      --bg:#000; --bg2:#000; --surface:#000; --surface2:#111;
+      --border:rgba(255,255,255,0.3); --muted:#aaa; --text:#fff; --text2:#ddd;
+      --primary:#ff0; --primary-light:#222200; --primary-dark:#ffd400;
+      --success:#0f0; --success-light:#002200;
+      --danger:#f00;  --danger-light:#220000;
+      --warning:#f90; --warning-light:#221100;
+      --info:#0ff;    --info-light:#002222;
+      --badge-open-bg:#003300; --badge-open-fg:#0f0;
+      --badge-full-bg:#330000; --badge-full-fg:#f00;
+      --shadow-sm:none; --shadow-md:none; --shadow-lg:none; --shadow-card:none;
+      --focus-ring: 0 0 0 3px #fff;
+    }
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;}
+    body{
+      font-family:var(--font-body);
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      line-height:1.5;
+      -webkit-tap-highlight-color:transparent;
+    }
+    a{color:inherit;text-decoration:none;}
+    button{font-family:var(--font-body);cursor:pointer;border:none;background:none;}
+    :focus-visible{outline:none;box-shadow:var(--focus-ring);}
+
+    .skip-link{
+      position:fixed;top:-100px;left:16px;z-index:999;
+      background:var(--primary);color:#fff;padding:10px 18px;
+      border-radius:var(--radius-md);font-weight:700;transition:top .2s;
+    }
+    .skip-link:focus{top:16px;}
+
+    #toast-container{
+      position:fixed;bottom:28px;right:28px;z-index:900;
+      display:flex;flex-direction:column;gap:10px;pointer-events:none;
+    }
+    .toast{
+      background:var(--surface);color:var(--text);
+      padding:12px 18px;border-radius:var(--radius-md);
+      box-shadow:var(--shadow-lg);font-weight:600;font-size:14px;
+      display:flex;align-items:center;gap:10px;
+      animation:toastIn .3s ease forwards;
+      pointer-events:auto;border-left:4px solid var(--primary);
+      font-family:var(--font-body);
+    }
+    .toast.success{border-color:var(--success);}
+    .toast.danger{border-color:var(--danger);}
+    @keyframes toastIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes toastOut{from{opacity:1;}to{opacity:0;transform:translateY(12px);}}
+
+    header.header{
+      background:var(--surface);
+      height:66px;padding:0 28px;
+      display:flex;justify-content:space-between;align-items:center;gap:16px;
+      box-shadow:var(--shadow-sm);border-bottom:1px solid var(--border);
+      position:sticky;top:0;z-index:40;
+    }
+    .brand{display:flex;align-items:center;gap:10px;}
+    .brand-logo{
+      width:36px;height:36px;border-radius:10px;
+      background:var(--primary);
+      display:flex;align-items:center;justify-content:center;font-size:18px;
+    }
+    .brand h1{font-family:var(--font-head);font-size:17px;font-weight:800;letter-spacing:-.3px;}
+    .brand h1 span{color:var(--primary);}
+
+    nav.nav-links{display:flex;align-items:center;gap:2px;}
+    .nav-links a{
+      padding:7px 13px;border-radius:var(--radius-sm);
+      font-size:13.5px;font-weight:600;color:var(--text2);
+      transition:background var(--transition),color var(--transition);
+    }
+    .nav-links a:hover{background:var(--surface2);color:var(--text);}
+    .nav-links a.active{background:var(--primary-light);color:var(--primary);}
+    .nav-links a.logout{color:var(--danger);}
+    .nav-links a.logout:hover{background:var(--danger-light);}
+
+    #themeToggle{
+      width:38px;height:38px;border-radius:var(--radius-sm);
+      background:var(--surface2);color:var(--text);
+      display:flex;align-items:center;justify-content:center;
+      font-size:17px;border:1px solid var(--border);
+      transition:background var(--transition);
+    }
+    #themeToggle:hover{background:var(--bg2);}
+
+    .page{max-width:1240px;margin:0 auto;padding:32px 24px 80px;}
+
+    .hero{
+      background:var(--surface);border-radius:var(--radius-xl);
+      padding:28px 32px;
+      display:flex;align-items:center;justify-content:space-between;gap:24px;
+      box-shadow:var(--shadow-card);border:1px solid var(--border);
+      margin-bottom:28px;position:relative;overflow:hidden;
+    }
+    .hero::before{
+      content:'';position:absolute;right:-40px;top:-40px;
+      width:220px;height:220px;border-radius:50%;
+      background:radial-gradient(circle,var(--primary-light) 0%,transparent 70%);
+      pointer-events:none;
+    }
+    .hero-left h2{font-family:var(--font-head);font-size:22px;font-weight:800;margin-bottom:4px;}
+    .hero-left h2 span{color:var(--primary);}
+    .hero-left p{font-size:14px;color:var(--muted);}
+    .hero-date{
+      font-size:13px;font-weight:600;color:var(--muted);
+      background:var(--surface2);padding:6px 16px;border-radius:999px;
+      border:1px solid var(--border);white-space:nowrap;position:relative;z-index:1;
+    }
+
+    .stats-row{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;
+    }
+    .stat-card{
+      background:var(--surface);border-radius:var(--radius-lg);
+      padding:20px 22px;border:1px solid var(--border);box-shadow:var(--shadow-card);
+      display:flex;align-items:center;gap:16px;
+      transition:transform var(--transition),box-shadow var(--transition);
+    }
+    .stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+    .stat-icon{
+      width:46px;height:46px;border-radius:var(--radius-sm);
+      display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
+    }
+    .stat-icon.all{background:var(--info-light);}
+    .stat-icon.open{background:var(--success-light);}
+    .stat-icon.full{background:var(--danger-light);}
+    .stat-card h3{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px;}
+    .stat-card .num{font-family:var(--font-head);font-size:28px;font-weight:800;line-height:1;}
+
+    .cta-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:22px;}
+    .btn-cta{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:10px 20px;border-radius:var(--radius-md);
+      font-family:var(--font-body);font-size:14px;font-weight:700;
+      transition:all var(--transition);
+    }
+    .btn-cta.primary{
+      background:var(--primary);color:#fff;
+      box-shadow:0 4px 14px rgba(232,98,42,0.35);
+    }
+    .btn-cta.primary:hover{background:var(--primary-dark);transform:translateY(-1px);box-shadow:0 6px 18px rgba(232,98,42,0.45);}
+    .btn-cta.ghost{
+      background:var(--surface);color:var(--text2);border:1px solid var(--border);
+    }
+    .btn-cta.ghost:hover{background:var(--surface2);color:var(--text);}
+    .btn-cta.ghost.active{background:var(--primary-light);color:var(--primary);border-color:var(--primary);}
+
+    .toolbar{display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;margin-bottom:22px;}
+    .search-wrap{flex:1;min-width:200px;position:relative;display:flex;align-items:center;}
+    .search-wrap .ico{position:absolute;left:14px;font-size:16px;color:var(--muted);pointer-events:none;}
+    .search-wrap input{
+      width:100%;padding:10px 14px 10px 40px;
+      border-radius:var(--radius-md);border:1px solid var(--border);
+      background:var(--surface);color:var(--text);
+      font-family:var(--font-body);font-size:14px;
+      transition:box-shadow var(--transition),border-color var(--transition);
+    }
+    .search-wrap input::placeholder{color:var(--muted);}
+    .search-wrap input:focus{box-shadow:var(--focus-ring);border-color:var(--primary);outline:none;}
+
+    .filter-group{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+    .filter-chip{
+      padding:8px 14px;border-radius:999px;
+      font-size:13px;font-weight:600;font-family:var(--font-body);
+      border:1px solid var(--border);
+      background:var(--surface);color:var(--text2);
+      transition:all var(--transition);cursor:pointer;
+    }
+    .filter-chip:hover{background:var(--surface2);}
+    .filter-chip.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+
+    .sort-select{
+      padding:8px 14px;border-radius:var(--radius-md);
+      border:1px solid var(--border);
+      background:var(--surface);color:var(--text);
+      font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;
+    }
+    .sort-select:focus{outline:none;box-shadow:var(--focus-ring);}
+
+    .section-head{display:flex;align-items:baseline;gap:10px;margin-bottom:18px;}
+    .section-head h2{font-family:var(--font-head);font-size:18px;font-weight:800;}
+    .count-pill{
+      background:var(--surface2);color:var(--muted);
+      font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;
+    }
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;}
+
+    /* ── CLICKABLE CARD ── */
+    .card{
+      background:var(--surface);border-radius:var(--radius-lg);
+      border:1px solid var(--border);box-shadow:var(--shadow-card);
+      display:flex;flex-direction:column;overflow:hidden;
+      transition:transform var(--transition),box-shadow var(--transition);
+      animation:cardIn .35s ease both;
+      position:relative; /* needed for the stretched link */
+      cursor:pointer;
+    }
+    .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);}
+    .card:hover .card-hint{opacity:1;transform:translateY(0);}
+
+    /* The invisible stretched link covering the whole card */
+    .card-link{
+      position:absolute;
+      inset:0;
+      z-index:1;
+      border-radius:var(--radius-lg);
+    }
+    /* Focus ring on the card link */
+    .card-link:focus-visible{
+      outline:none;
+      box-shadow:var(--focus-ring);
+    }
+
+    /* All interactive elements in the card must be above the stretched link */
+    .card-footer,
+    .card-footer .btn,
+    .card-footer .joined-chip,
+    .card-footer a,
+    .card-footer button,
+    .card-footer form,
+    .card-footer .payment-box{
+      position:relative;
+      z-index:2;
+    }
+
+    /* Small "View details" hint that fades in on hover */
+    .card-hint{
+      position:absolute;
+      bottom:0; left:0; right:0;
+      background:linear-gradient(to top,rgba(0,0,0,0.55),transparent);
+      color:#fff;
+      font-size:12px;font-weight:700;
+      text-align:center;
+      padding:18px 0 10px;
+      opacity:0;
+      transform:translateY(4px);
+      transition:opacity .22s ease,transform .22s ease;
+      pointer-events:none;
+      z-index:0;
+      border-radius:0 0 var(--radius-lg) var(--radius-lg);
+    }
+    /* Only show the hint when card-footer is empty/absent — i.e. always show it subtly */
+    .card:hover .card-hint{opacity:1;transform:translateY(0);}
+
+    @keyframes cardIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+    .card:nth-child(1){animation-delay:.05s;} .card:nth-child(2){animation-delay:.10s;}
+    .card:nth-child(3){animation-delay:.15s;} .card:nth-child(4){animation-delay:.20s;}
+    .card:nth-child(5){animation-delay:.25s;} .card:nth-child(6){animation-delay:.30s;}
+
+    .card-banner{
+      height:90px;position:relative;overflow:hidden;
+      display:flex;align-items:flex-end;padding:10px 14px;
+    }
+    .card-banner-bg{
+      position:absolute;inset:0;
+      transition:transform .4s ease;
+    }
+    .card:hover .card-banner-bg{transform:scale(1.05);}
+    .card-banner-emoji{
+      font-size:38px;position:absolute;right:16px;top:50%;transform:translateY(-50%);
+      opacity:.3;transition:transform .3s ease,opacity .3s ease;
+    }
+    .card:hover .card-banner-emoji{transform:translateY(-55%) scale(1.1);opacity:.5;}
+    .status-chip{
+      position:relative;z-index:1;
+      padding:4px 10px;border-radius:999px;
+      font-size:11px;font-weight:700;letter-spacing:.4px;
+      backdrop-filter:blur(6px);
+    }
+    .status-chip.open{background:rgba(255,255,255,0.88);color:var(--success);}
+    .status-chip.full{background:rgba(255,255,255,0.88);color:var(--danger);}
+    .countdown-chip{
+      position:absolute;top:10px;right:14px;z-index:1;
+      background:rgba(0,0,0,0.45);color:#fff;
+      padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;
+      backdrop-filter:blur(4px);
+    }
+
+    .card-body{padding:16px 18px 6px;}
+    .card-body h3{
+      font-family:var(--font-head);font-size:16px;font-weight:800;
+      margin-bottom:6px;display:flex;align-items:center;gap:6px;
+    }
+    .card-meta{
+      font-size:13px;color:var(--muted);margin-bottom:12px;
+      display:flex;gap:12px;flex-wrap:wrap;
+    }
+    .card-meta span{display:flex;align-items:center;gap:4px;}
+    .card-rating{
+      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+      margin-bottom:10px;font-size:12px;font-weight:700;color:var(--muted);
+    }
+    .card-rating .score{font-family:var(--font-head);font-size:14px;color:var(--text);}
+    .card-stars{display:flex;gap:2px;}
+    .card-stars span{font-size:12px;color:#d1d5db;line-height:1;}
+    .card-stars span.filled{color:#f59e0b;}
+
+    .progress-wrap{margin-bottom:12px;}
+    .progress-label{
+      display:flex;justify-content:space-between;
+      font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;
+    }
+    .progress-label .almost{color:var(--danger);}
+    .progress-track{height:6px;border-radius:999px;background:var(--surface2);overflow:hidden;}
+    .progress-fill{
+      height:100%;border-radius:999px;
+      background:linear-gradient(90deg,var(--primary),#f5a623);
+      transition:width .6s cubic-bezier(.4,0,.2,1);
+    }
+    .progress-fill.danger{background:linear-gradient(90deg,var(--danger),#f87171);}
+
+    .card-price{
+      font-family:var(--font-head);font-size:20px;font-weight:800;
+      color:var(--primary);margin-bottom:12px;
+    }
+
+    .card-footer{
+      padding:12px 18px 16px;border-top:1px solid var(--border);
+      display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:auto;
+    }
+
+    .btn{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:7px 14px;border-radius:var(--radius-sm);
+      font-family:var(--font-body);font-size:13px;font-weight:600;
+      transition:all var(--transition);border:1px solid transparent;min-height:34px;
+    }
+    .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+    .btn-primary:hover{background:var(--primary-dark);}
+    .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+    .btn-secondary{background:var(--surface2);color:var(--text2);border-color:var(--border);}
+    .btn-secondary:hover{background:var(--bg2);color:var(--text);}
+    .btn-danger{background:var(--danger-light);color:var(--danger);border-color:var(--danger-light);}
+    .btn-danger:hover{background:var(--danger);color:#fff;}
+    .btn-danger.confirm{background:var(--danger);color:#fff;}
+
+    .joined-chip{
+      display:inline-flex;align-items:center;gap:5px;
+      padding:5px 11px;border-radius:999px;
+      font-size:12px;font-weight:700;
+    }
+    .joined-chip.pending{background:var(--warning-light);color:var(--warning);border:1px solid rgba(180,83,9,.2);}
+    .joined-chip.approved{background:var(--success-light);color:var(--success);border:1px solid rgba(42,125,79,.2);}
+    .joined-chip.rejected{background:var(--danger-light);color:var(--danger);border:1px solid rgba(192,57,43,.2);}
+    .joined-chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+    .payment-box{
+      margin-top:10px;width:100%;padding:12px;
+      border-radius:var(--radius-md);
+      background:var(--surface2);border:1px solid var(--border);
+    }
+    .payment-row{display:flex;gap:8px;margin-bottom:8px;}
+    .payment-item{
+      flex:1;padding:8px;border-radius:var(--radius-sm);text-align:center;
+      background:var(--surface);border:1px solid var(--border);
+    }
+    .payment-item span{font-size:11px;color:var(--muted);display:block;}
+    .payment-item strong{font-size:15px;font-weight:800;display:block;margin-top:2px;}
+    .payment-item.paid strong{color:var(--success);}
+    .payment-item.remaining strong{color:var(--danger);}
+    .pay-status{text-align:center;padding:5px;border-radius:var(--radius-sm);font-size:12px;font-weight:700;}
+    .pay-status.paid{background:var(--success-light);color:var(--success);}
+    .pay-status.unpaid{background:var(--danger-light);color:var(--danger);}
+    .pay-status.partial{background:var(--warning-light);color:var(--warning);}
+
+    .empty{
+      text-align:center;padding:72px 24px;
+      background:var(--surface);border-radius:var(--radius-xl);border:1px solid var(--border);
+    }
+    .empty-icon{font-size:56px;margin-bottom:16px;display:block;}
+    .empty h3{font-family:var(--font-head);font-size:20px;font-weight:800;margin-bottom:8px;}
+    .empty p{color:var(--muted);font-size:14px;margin-bottom:24px;}
+
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+    .kbd-hint{
+      margin-left:auto;font-size:12px;color:var(--muted);display:flex;gap:14px;align-items:center;
+    }
+    .kbd{
+      display:inline-flex;align-items:center;justify-content:center;
+      width:22px;height:22px;border-radius:5px;
+      background:var(--surface2);border:1px solid var(--border);
+      font-size:11px;font-weight:700;font-family:monospace;
+    }
+
+    @media(max-width:900px){
+      .stats-row{grid-template-columns:repeat(3,1fr);}
+      .kbd-hint{display:none;}
+    }
+    @media(max-width:640px){
+      header.header{padding:0 16px;}
+      .nav-links .hide-mobile{display:none;}
+      .page{padding:20px 16px 80px;}
+      .hero{flex-direction:column;align-items:flex-start;gap:12px;padding:22px 20px;}
+      .stats-row{grid-template-columns:1fr 1fr 1fr;gap:10px;}
+      .stat-card{padding:14px;gap:8px;flex-direction:column;align-items:flex-start;}
+      .stat-card .num{font-size:22px;}
+      .toolbar{gap:8px;}
+      .cta-row{gap:8px;}
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <header class="header" role="banner">
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true">🌍</div>
+      <h1>Travel<span>Buddy</span></h1>
+    </div>
+
+    <nav class="nav-links" role="navigation" aria-label="Main navigation">
+      <a href="{{ url_for('mainpage', view='explore') }}"
+         class="nav-link {{ 'active' if view=='explore' else '' }}">
+        🏠 <span class="hide-mobile">Home</span>
+      </a>
+      <a href="{{ url_for('host_dashboard') }}"
+         class="nav-link hide-mobile {{ 'active' if request.endpoint=='host_dashboard' else '' }}">
+        Host Dashboard
+      </a>
+      <a href="{{ url_for('traveler_profile') }}"
+         class="nav-link hide-mobile {{ 'active' if request.endpoint=='traveler_profile' else '' }}">
+        Profile
+      </a>
+      <a href="{{ url_for('messages_page') }}"
+         class="nav-link hide-mobile {{ 'active' if request.endpoint=='messages_page' else '' }}">
+        Messages
+      </a>
+      <a href="{{ url_for('logout') }}" class="nav-link logout">Logout</a>
+    </nav>
+
+    <button id="themeToggle" aria-label="Toggle color theme" title="Toggle theme">☀️</button>
+  </header>
+
+  <main id="mainContent" class="page" role="main">
+
+    <div class="hero" role="region" aria-label="Welcome banner">
+      <div class="hero-left">
+        <h2>Welcome back, <span>Explorer</span> 👋</h2>
+        <p>Here's what's happening with your trips today.</p>
+      </div>
+      <div class="hero-date" id="heroDate" aria-live="polite"></div>
+    </div>
+
+    <section class="stats-row" aria-label="Trip statistics">
+      <div class="stat-card">
+        <div class="stat-icon all" aria-hidden="true">🗺️</div>
+        <div>
+          <h3>Total Trips</h3>
+          <div class="num">{{ (trips or [])|length }}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon open" aria-hidden="true">✅</div>
+        <div>
+          <h3>Open</h3>
+          <div class="num">{{ (trips or [])|selectattr("trip_status","equalto","open")|list|length }}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon full" aria-hidden="true">🔒</div>
+        <div>
+          <h3>Full</h3>
+          <div class="num">{{ (trips or [])|selectattr("trip_status","equalto","full")|list|length }}</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="cta-row" role="group" aria-label="Quick actions">
+      <a href="/create_post" class="btn-cta primary">➕ Create Trip</a>
+      <a href="{{ url_for('mainpage', view='mine') }}"
+         class="btn-cta ghost {{ 'active' if view=='mine' else '' }}">
+        🏕 My Hosted
+      </a>
+      <a href="{{ url_for('mainpage', view='joined') }}"
+         class="btn-cta ghost {{ 'active' if view=='joined' else '' }}">
+        👥 Joined Trips
+      </a>
+      <div class="kbd-hint" aria-label="Keyboard shortcuts">
+        <span><kbd class="kbd">N</kbd> New trip</span>
+        <span><kbd class="kbd">F</kbd> Search</span>
+      </div>
+    </div>
+
+    <div class="toolbar" role="search" aria-label="Search and filter trips">
+      <div class="search-wrap">
+        <span class="ico" aria-hidden="true">🔍</span>
+        <label for="destinationSearch" class="sr-only">Search destination</label>
+        <input id="destinationSearch" type="search"
+               placeholder="Search destination…"
+               autocomplete="off"
+               aria-label="Search destination">
+      </div>
+
+      <div class="filter-group" role="group" aria-label="Filter by status">
+        <button class="filter-chip active" data-filter="all">All</button>
+        <button class="filter-chip" data-filter="open">Open</button>
+        <button class="filter-chip" data-filter="full">Full</button>
+        {% if joined_trips %}
+        <button class="filter-chip" data-filter="joined">Joined</button>
+        {% endif %}
+      </div>
+
+      <select class="sort-select" id="sortSelect" aria-label="Sort trips by">
+        <option value="default">Sort: Default</option>
+        <option value="date">Sort: Date</option>
+        <option value="price-asc">Sort: Price ↑</option>
+        <option value="price-desc">Sort: Price ↓</option>
+        <option value="spots">Sort: Spots Left</option>
+      </select>
+    </div>
+
+    {% if trips and trips|length > 0 %}
+    <section aria-label="Trips list">
+      <div class="section-head">
+        <h2>
+          {{ 'My Hosted Trips' if view=='mine'
+             else 'Joined Trips'    if view=='joined'
+             else 'Available Trips' }}
+        </h2>
+        <span class="count-pill" id="visibleCount">{{ trips|length }}</span>
+      </div>
+
+      <div class="grid" id="tripsGrid">
+        {% set banner_colors = [
+          '#e8622a,#f5a623',
+          '#2a7d4f,#34d399',
+          '#1d6fa4,#60a5fa',
+          '#7c3aed,#a78bfa',
+          '#be185d,#f472b6',
+          '#b45309,#fbbf24'
+        ] %}
+        {% set banner_emojis = ['🗼','🏔','🏖','🏯','🌋','🗺'] %}
+
+        {% for trip in trips %}
+        {% set ci = loop.index0 % 6 %}
+        <article class="card"
+          role="article"
+          aria-labelledby="trip-{{ trip.post_id }}-title"
+          data-destination="{{ trip.destination|lower }}"
+          data-status="{{ trip.trip_status }}"
+          data-price="{{ trip.price }}"
+          data-joined="{{ trip.joined }}"
+          data-max="{{ trip.max_people }}"
+          data-date="{{ trip.travel_date_iso or trip.travel_date }}"
+          {% if trip.post_id in (joined_trips or []) %}data-is-joined="true"{% endif %}>
+
+          {# ── STRETCHED LINK: clicking anywhere on the card goes to trip details ── #}
+          <a href="{{ url_for('trip_detail', post_id=trip.post_id) }}"
+             class="card-link"
+             aria-label="View details for {{ trip.destination }}"></a>
+
+          <div class="card-banner">
+            <div class="card-banner-bg"
+                 style="background:linear-gradient(135deg,{{ banner_colors[ci] }});"></div>
+            <span class="card-banner-emoji" aria-hidden="true">{{ banner_emojis[ci] }}</span>
+            <span class="status-chip {{ trip.trip_status }}" role="status">
+              {{ trip.trip_status|upper }}
+            </span>
+            <span class="countdown-chip"
+                  data-date="{{ trip.travel_date_iso or trip.travel_date }}"
+                  aria-label="Days until trip">…</span>
+          </div>
+
+          <div class="card-body">
+            <h3 id="trip-{{ trip.post_id }}-title">📍 {{ trip.destination }}</h3>
+
+            <div class="card-meta">
+              <span>📅 <time datetime="{{ trip.travel_date_iso or trip.travel_date }}">{{ trip.travel_date }}</time></span>
+              <span>👥 {{ trip.joined }}/{{ trip.max_people }}</span>
+            </div>
+            <div class="card-rating" aria-label="Host rating summary">
+              {% if trip.host_avg_rating is not none %}
+              <span class="score">{{ "%.1f"|format(trip.host_avg_rating) }}/5</span>
+              <span class="card-stars" aria-hidden="true">
+                {% for i in range(1, 6) %}
+                <span class="{{ 'filled' if i <= trip.host_avg_rating else '' }}">★</span>
+                {% endfor %}
+              </span>
+              <span>{{ trip.host_reviews_count or 0 }} review{{ '' if (trip.host_reviews_count or 0) == 1 else 's' }}</span>
+              {% else %}
+              <span>New host</span>
+              {% endif %}
+            </div>
+
+            {% set pct = ((trip.joined / trip.max_people) * 100)|int %}
+            <div class="progress-wrap" aria-label="{{ trip.joined }} of {{ trip.max_people }} spots filled">
+              <div class="progress-label">
+                <span>{{ trip.joined }}/{{ trip.max_people }} joined</span>
+                {% if pct >= 80 %}
+                  <span class="almost">⚠️ Almost full!</span>
+                {% else %}
+                  <span>{{ trip.max_people - trip.joined }} spot{{ 's' if (trip.max_people - trip.joined) != 1 }} left</span>
+                {% endif %}
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill {{ 'danger' if pct >= 80 else '' }}"
+                     style="width:{{ pct }}%;"
+                     role="progressbar"
+                     aria-valuenow="{{ pct }}"
+                     aria-valuemin="0"
+                     aria-valuemax="100"></div>
+              </div>
+            </div>
+
+            <div class="card-price" aria-label="Price ₹{{ trip.price }}">₹ {{ trip.price }}</div>
+          </div>
+
+          <!-- FOOTER / ACTIONS — z-index:2 keeps them above the stretched link -->
+          <div class="card-footer">
+            {% if view == 'mine' %}
+              <a href="{{ url_for('chat_trip', post_id=trip.post_id) }}" class="btn btn-secondary">💬 Group Chat</a>
+              <a href="/members/{{ trip.post_id }}" class="btn btn-secondary">👥 Members</a>
+              <a href="/edit/{{ trip.post_id }}" class="btn btn-secondary">✏️ Edit</a>
+              {% if trip.trip_status not in ['completed', 'cancelled'] %}
+              <form method="POST" action="/complete/{{ trip.post_id }}" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-secondary">✅ Mark Completed</button>
+              </form>
+              {% endif %}
+              <form method="POST" action="/delete/{{ trip.post_id }}"
+                    style="display:inline;" class="delete-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="button" class="btn btn-danger delete-btn"
+                        aria-label="Delete trip to {{ trip.destination }}">
+                  🗑 Delete
+                </button>
+              </form>
+
+            {% elif trip.post_id in (joined_trips or []) %}
+              <div class="joined-chip {{ trip.status or 'pending' }}">
+                <span class="dot" aria-hidden="true"></span>
+                {{ (trip.status or 'joined')|capitalize }}
+              </div>
+
+              <a href="{{ url_for('private_chat', user_id=trip["host_id"]) }}" class="btn btn-secondary">
+                💬 Message Host
+              </a>
+              {% if trip.post_id in (approved_joined_trips or []) %}
+              <a href="{{ url_for('chat_trip', post_id=trip.post_id) }}" class="btn btn-secondary">
+                👥 Group Chat
+              </a>
+              {% endif %}
+
+              {% if trip.amount_paid is defined %}
+              <div class="payment-box">
+                <div class="payment-row">
+                  <div class="payment-item paid">
+                    <span>Paid</span><strong>₹ {{ trip.amount_paid }}</strong>
+                  </div>
+                  <div class="payment-item remaining">
+                    <span>Remaining</span><strong>₹ {{ trip.remaining }}</strong>
+                  </div>
+                </div>
+                <div class="pay-status {{ trip.payment_status or 'unpaid' }}">
+                  {{ (trip.payment_status or 'unpaid')|upper }}
+                </div>
+              </div>
+              {% endif %}
+
+            {% else %}
+              <a href="{{ url_for('private_chat', user_id=trip["host_id"]) }}" class="btn btn-secondary">
+                💬 Message Host
+              </a>
+              <button class="btn btn-primary join-btn"
+                      data-href="/join/{{ trip.post_id }}"
+                      {% if trip.trip_status == 'full' %}disabled aria-disabled="true"{% endif %}>
+                {% if trip.trip_status == 'full' %}🔒 Full{% else %}➕ Join{% endif %}
+              </button>
+            {% endif %}
+          </div>
+
+          <!-- Hover hint overlay (purely decorative) -->
+          <div class="card-hint" aria-hidden="true">👆 Tap to view details</div>
+        </article>
+        {% endfor %}
+      </div>
+
+      <p id="noResults" style="display:none;text-align:center;padding:48px;color:var(--muted);font-weight:600;">
+        😕 No trips match your search or filter.
+      </p>
+    </section>
+
+    {% else %}
+    <div class="empty" role="region" aria-live="polite">
+      <span class="empty-icon">🧳</span>
+      <h3>No adventures yet!</h3>
+      <p>Start exploring or create your first trip to get going.</p>
+      <a href="/create_post" class="btn-cta primary">➕ Create Your First Trip</a>
+    </div>
+    {% endif %}
+
+  </main>
+
+  <script>
+  (function(){
+
+    const root   = document.documentElement;
+    const tBtn   = document.getElementById('themeToggle');
+    const THEMES = ['default','dark','high-contrast'];
+    const ICONS  = {default:'☀️', dark:'🌙', 'high-contrast':'⚡'};
+    let current  = localStorage.getItem('tb_theme') || 'default';
+
+    function applyTheme(t){
+      current = t;
+      t === 'default' ? root.removeAttribute('data-theme') : root.setAttribute('data-theme', t);
+      if(tBtn) tBtn.textContent = ICONS[t];
+      localStorage.setItem('tb_theme', t);
+    }
+    applyTheme(current);
+    if(tBtn) tBtn.addEventListener('click', ()=>{
+      applyTheme(THEMES[(THEMES.indexOf(current)+1) % THEMES.length]);
+    });
+
+    /* ── DATE ── */
+    const heroDate = document.getElementById('heroDate');
+    if(heroDate) heroDate.textContent = new Date().toLocaleDateString('en-IN',{
+      weekday:'long',day:'numeric',month:'long',year:'numeric'
+    });
+
+    /* ── COUNTDOWNS ── */
+    document.querySelectorAll('.countdown-chip[data-date]').forEach(chip=>{
+      const d    = new Date(chip.dataset.date);
+      if(isNaN(d)){ chip.remove(); return; }
+      const diff = Math.ceil((d - Date.now()) / 86400000);
+      if(diff < 0)       chip.textContent = 'Past';
+      else if(diff === 0)chip.textContent = 'Today!';
+      else               chip.textContent = diff + 'd away';
+    });
+
+    /* ── TOAST ── */
+    function toast(msg, type='info', ms=3200){
+      const c = document.getElementById('toast-container');
+      if(!c) return;
+      const icons = {info:'ℹ️',success:'✅',danger:'❌'};
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+      c.appendChild(el);
+      setTimeout(()=>{
+        el.style.animation = 'toastOut .3s ease forwards';
+        setTimeout(()=>el.remove(), 300);
+      }, ms);
+    }
+
+    /* ── JOIN ── */
+    document.querySelectorAll('.join-btn').forEach(b=>{
+      b.addEventListener('click', function(e){
+        e.stopPropagation(); // prevent card click
+        if(this.disabled || this.dataset.loading) return;
+        this.dataset.loading = '1';
+        const href = this.dataset.href;
+        this.disabled = true;
+        this.innerHTML = '<span style="display:inline-block;animation:spin .7s linear infinite">⏳</span> Joining…';
+        toast('Joining trip…','info',2000);
+        setTimeout(()=>{ window.location.href = href; }, 600);
+      });
+    });
+
+    /* ── INLINE DELETE (two-tap confirm, no native dialog) ── */
+    document.querySelectorAll('.delete-btn').forEach(btn=>{
+      let timer;
+      btn.addEventListener('click', function(e){
+        e.stopPropagation(); // prevent card click
+        if(this.classList.contains('confirm')){
+          clearTimeout(timer);
+          toast('Deleting trip…','danger',2000);
+          this.closest('form').submit();
+        } else {
+          this.classList.add('confirm');
+          this.textContent = '⚠️ Sure?';
+          timer = setTimeout(()=>{
+            this.classList.remove('confirm');
+            this.innerHTML = '🗑 Delete';
+          }, 3000);
+        }
+      });
+    });
+
+    /* ── Stop footer button clicks from propagating to card-link ── */
+    document.querySelectorAll('.card-footer a, .card-footer button').forEach(el=>{
+      el.addEventListener('click', e => e.stopPropagation());
+    });
+
+    /* ── SEARCH + FILTER + SORT ── */
+    const searchEl  = document.getElementById('destinationSearch');
+    const sortEl    = document.getElementById('sortSelect');
+    const chips     = document.querySelectorAll('.filter-chip');
+    const grid      = document.getElementById('tripsGrid');
+    const noRes     = document.getElementById('noResults');
+    const countPill = document.getElementById('visibleCount');
+
+    if(!grid) return;
+
+    let activeFilter = 'all';
+    let searchTerm   = '';
+    let sortMode     = 'default';
+
+    function cards(){ return Array.from(grid.querySelectorAll('.card')); }
+
+    function render(){
+      let visible = 0;
+      const all = cards();
+
+      all.forEach(c=>{
+        const dest   = c.dataset.destination || '';
+        const status = c.dataset.status || '';
+        const joined = c.dataset.isJoined === 'true';
+        const matchS = !searchTerm || dest.includes(searchTerm);
+        let   matchF = true;
+        if(activeFilter==='open')   matchF = status==='open';
+        if(activeFilter==='full')   matchF = status==='full';
+        if(activeFilter==='joined') matchF = joined;
+        const show = matchS && matchF;
+        c.style.display = show ? '' : 'none';
+        if(show) visible++;
+      });
+
+      const vis = all.filter(c=>c.style.display!=='none');
+      vis.sort((a,b)=>{
+        if(sortMode==='date')       return new Date(a.dataset.date)-new Date(b.dataset.date);
+        if(sortMode==='price-asc')  return +a.dataset.price - +b.dataset.price;
+        if(sortMode==='price-desc') return +b.dataset.price - +a.dataset.price;
+        if(sortMode==='spots')      return (+a.dataset.max - +a.dataset.joined)-
+                                           (+b.dataset.max - +b.dataset.joined);
+        return 0;
+      });
+      vis.forEach(c=>grid.appendChild(c));
+
+      if(countPill) countPill.textContent = visible;
+      if(noRes)     noRes.style.display   = visible===0 ? '' : 'none';
+    }
+
+    if(searchEl) searchEl.addEventListener('input', e=>{
+      searchTerm = e.target.value.toLowerCase().trim();
+      render();
+    });
+
+    chips.forEach(c=>c.addEventListener('click', function(){
+      chips.forEach(x=>x.classList.remove('active'));
+      this.classList.add('active');
+      activeFilter = this.dataset.filter;
+      render();
+    }));
+
+    if(sortEl) sortEl.addEventListener('change', e=>{
+      sortMode = e.target.value;
+      render();
+    });
+
+    document.addEventListener('keydown', e=>{
+      const tag = document.activeElement.tagName;
+      if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return;
+      if(e.key==='n'||e.key==='N') window.location.href='/create_post';
+      if((e.key==='f'||e.key==='F') && searchEl){ e.preventDefault(); searchEl.focus(); }
+    });
+
+  })();
+  </script>
+</body>
+</html>

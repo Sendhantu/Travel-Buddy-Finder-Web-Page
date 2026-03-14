@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Notifications | Travel Buddy</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f0ede8;
+      --surface:#fbfaf8;
+      --surface2:#f3efe9;
+      --border:rgba(0,0,0,.08);
+      --text:#1a1714;
+      --muted:#847d76;
+      --primary:#e8622a;
+      --primary-dark:#c44e1c;
+      --radius:14px;
+      --shadow:0 10px 28px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'DM Sans',sans-serif;
+      background:radial-gradient(circle at 88% 8%, rgba(232,98,42,.13), transparent 28%), var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      -webkit-font-smoothing:antialiased;
+    }
+    a{text-decoration:none;color:inherit}
+    button,select{font-family:'DM Sans',sans-serif}
+    header{
+      height:66px;
+      position:sticky;
+      top:0;
+      z-index:20;
+      background:rgba(251,250,248,.94);
+      backdrop-filter:blur(9px);
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 18px;
+    }
+    .title{font-family:'Sora',sans-serif;font-size:18px;font-weight:800}
+    .back{
+      border:1px solid var(--border);
+      background:var(--surface2);
+      border-radius:999px;
+      padding:7px 12px;
+      font-size:13px;
+      font-weight:700;
+    }
+    .page{max-width:980px;margin:22px auto;padding:0 16px 44px}
+    .toolbar{
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      background:var(--surface);
+      box-shadow:var(--shadow);
+      padding:12px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+      margin-bottom:12px;
+    }
+    .badge{
+      margin-left:auto;
+      border:1px solid rgba(232,98,42,.25);
+      background:#fde8dc;
+      color:var(--primary);
+      border-radius:999px;
+      padding:5px 10px;
+      font-size:12px;
+      font-weight:800;
+    }
+    .btn,.select{
+      border:1px solid var(--border);
+      background:var(--surface2);
+      border-radius:10px;
+      font-size:12px;
+      font-weight:700;
+      padding:8px 10px;
+      color:#3f3a34;
+    }
+    .btn.primary{
+      border-color:var(--primary);
+      background:var(--primary);
+      color:#fff;
+    }
+    .btn.primary:hover{background:var(--primary-dark)}
+    .list{
+      border:1px solid var(--border);
+      border-radius:20px;
+      background:var(--surface);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .row{
+      border-bottom:1px solid var(--border);
+      padding:12px 14px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      background:var(--surface);
+    }
+    .row:last-child{border-bottom:none}
+    .row.unread{background:linear-gradient(90deg, rgba(232,98,42,.08), transparent)}
+    .ico{
+      width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
+      font-size:15px;font-weight:800;color:#fff;flex:0 0 34px;
+    }
+    .ico.info{background:#1d6fa4}
+    .ico.success{background:#2a7d4f}
+    .ico.support{background:#7c3aed}
+    .ico.moderation{background:#b45309}
+    .ico.default{background:#64748b}
+    .body{flex:1;min-width:0}
+    .body h3{font-size:13px;font-weight:800;margin-bottom:2px}
+    .body p{font-size:13px;color:#3f3a34;line-height:1.4}
+    .meta{margin-top:5px;font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+    .actions{display:flex;gap:6px;flex-shrink:0}
+    .actions button{
+      border:1px solid var(--border);
+      background:var(--surface2);
+      border-radius:999px;
+      padding:5px 8px;
+      font-size:11px;
+      font-weight:700;
+      color:#3f3a34;
+      cursor:pointer;
+    }
+    .empty{
+      padding:48px 14px;
+      text-align:center;
+      font-size:14px;
+      color:var(--muted);
+    }
+    @media(max-width:680px){
+      .badge{margin-left:0}
+      .actions{flex-direction:column}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">🔔 Notifications</div>
+    <a class="back" href="{{ url_for('mainpage') }}">Back</a>
+  </header>
+
+  <main class="page">
+    <section class="toolbar" aria-label="Notification controls">
+      <select id="filter" class="select" aria-label="Filter notifications">
+        <option value="all">All</option>
+        <option value="unread">Unread</option>
+        <option value="chat">Chat</option>
+        <option value="support">Support</option>
+        <option value="moderation">Moderation</option>
+      </select>
+      <button id="markAllRead" class="btn">Mark all read</button>
+      <button id="refreshBtn" class="btn">Refresh</button>
+      <span id="unreadBadge" class="badge" style="border-radius:999px;min-width:24px;text-align:center;">{{ unread_count or 0 }} unread</span>
+    </section>
+
+    <section class="list" id="list" aria-live="polite">
+      {% if notifications %}
+        {% for n in notifications %}
+          <article
+            class="row {{ 'unread' if not n.is_read else '' }}"
+            data-id="{{ n.id }}"
+            data-type="{{ (n.type or 'info')|lower }}"
+            data-read="{{ 1 if n.is_read else 0 }}"
+            data-ts="{{ n.created_at }}"
+          >
+            <div class="ico {{ (n.type or 'default')|lower }} {{ 'default' if (n.type or '')|lower not in ['info','success','support','moderation'] else '' }}">
+              {% if (n.type or '')|lower == 'success' %}✓{% elif (n.type or '')|lower == 'support' %}🛠{% elif (n.type or '')|lower == 'moderation' %}⚑{% else %}ℹ{% endif %}
+            </div>
+            <div class="body">
+              <h3>{{ n.title or 'Notification' }}</h3>
+              <p>{{ n.message }}</p>
+              <div class="meta">
+                <span>{{ (n.type or 'info')|upper }}</span>
+                <time class="time">{{ n.created_at }}</time>
+              </div>
+            </div>
+            <div class="actions">
+              {% if not n.is_read %}
+                <button type="button" data-action="read">Read</button>
+              {% endif %}
+              <button type="button" data-action="dismiss">Dismiss</button>
+            </div>
+          </article>
+        {% endfor %}
+      {% else %}
+        <div class="empty" id="emptyState">No notifications yet.</div>
+      {% endif %}
+    </section>
+  </main>
+
+  <script>
+    (function(){
+      const list = document.getElementById('list');
+      const filter = document.getElementById('filter');
+      const markAllRead = document.getElementById('markAllRead');
+      const refreshBtn = document.getElementById('refreshBtn');
+      const unreadBadge = document.getElementById('unreadBadge');
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+      function parseDate(ts){
+        const d = new Date(String(ts || '').replace(' ', 'T'));
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+
+      function rel(ts){
+        const d = parseDate(ts);
+        if(!d) return String(ts || '');
+        const sec = Math.floor((Date.now() - d.getTime()) / 1000);
+        if(sec < 45) return 'just now';
+        if(sec < 3600) return Math.floor(sec / 60) + 'm ago';
+        if(sec < 86400) return Math.floor(sec / 3600) + 'h ago';
+        if(sec < 604800) return Math.floor(sec / 86400) + 'd ago';
+        return d.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+      }
+
+      function applyFilter(){
+        const value = filter.value;
+        let unread = 0;
+        let visible = 0;
+        list.querySelectorAll('.row').forEach((row)=>{
+          const type = (row.dataset.type || '').toLowerCase();
+          const isRead = row.dataset.read === '1';
+          if(!isRead) unread += 1;
+          const show = value === 'all' || (value === 'unread' ? !isRead : type === value);
+          row.style.display = show ? '' : 'none';
+          if(show) visible += 1;
+        });
+        unreadBadge.textContent = `${unread} unread`;
+        let empty = document.getElementById('emptyState');
+        if(visible === 0){
+          if(!empty){
+            empty = document.createElement('div');
+            empty.id = 'emptyState';
+            empty.className = 'empty';
+            list.appendChild(empty);
+          }
+          empty.textContent = 'No notifications match this filter.';
+          empty.style.display = '';
+        } else if(empty) {
+          empty.style.display = 'none';
+        }
+      }
+
+      async function post(url){
+        const res = await fetch(url, {
+          method:'POST',
+          credentials:'same-origin',
+          headers:{
+            'X-Requested-With':'XMLHttpRequest',
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+          }
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok || data.ok === false){
+          throw new Error(data.error || `Request failed (${res.status})`);
+        }
+        return data;
+      }
+
+      async function reload(){
+        const res = await fetch('/api/notifications?limit=200', { credentials:'same-origin' });
+        if(!res.ok) return;
+        const data = await res.json();
+        const rows = data.rows || [];
+        list.innerHTML = '';
+        if(!rows.length){
+          const empty = document.createElement('div');
+          empty.id = 'emptyState';
+          empty.className = 'empty';
+          empty.textContent = 'No notifications yet.';
+          list.appendChild(empty);
+          applyFilter();
+          return;
+        }
+        rows.forEach((n)=>{
+          const row = document.createElement('article');
+          row.className = `row ${n.is_read ? '' : 'unread'}`.trim();
+          row.dataset.id = String(n.id);
+          row.dataset.type = (n.type || 'info').toLowerCase();
+          row.dataset.read = String(n.is_read ? 1 : 0);
+          row.dataset.ts = n.created_at || '';
+          const iconType = ['info','success','support','moderation'].includes(row.dataset.type) ? row.dataset.type : 'default';
+          const iconText = iconType === 'success' ? '✓' : (iconType === 'support' ? '🛠' : (iconType === 'moderation' ? '⚑' : 'ℹ'));
+          row.innerHTML = `
+            <div class="ico ${iconType}">${iconText}</div>
+            <div class="body">
+              <h3>${n.title || 'Notification'}</h3>
+              <p>${n.message || ''}</p>
+              <div class="meta">
+                <span>${(n.type || 'info').toUpperCase()}</span>
+                <time class="time">${rel(n.created_at)}</time>
+              </div>
+            </div>
+            <div class="actions">
+              ${n.is_read ? '' : '<button type="button" data-action="read">Read</button>'}
+              <button type="button" data-action="dismiss">Dismiss</button>
+            </div>
+          `;
+          list.appendChild(row);
+        });
+        applyFilter();
+      }
+
+      list.querySelectorAll('.row .time').forEach((el)=>{
+        const row = el.closest('.row');
+        el.textContent = rel(row?.dataset.ts || el.textContent);
+      });
+
+      list.addEventListener('click', async (e)=>{
+        const btn = e.target.closest('button[data-action]');
+        if(!btn) return;
+        const row = btn.closest('.row');
+        if(!row) return;
+        const id = row.dataset.id;
+        const action = btn.dataset.action;
+        try {
+          if(action === 'read'){
+            await post(`/api/notifications/${encodeURIComponent(id)}/read`);
+            row.dataset.read = '1';
+            row.classList.remove('unread');
+            btn.remove();
+          }
+          if(action === 'dismiss'){
+            await post(`/api/notifications/${encodeURIComponent(id)}/dismiss`);
+            row.remove();
+          }
+          applyFilter();
+        } catch (err){
+          console.error(err);
+        }
+      });
+
+      markAllRead.addEventListener('click', async ()=>{
+        try {
+          await post('/api/notifications/read_all');
+          await reload();
+        } catch (err){
+          console.error(err);
+        }
+      });
+
+      refreshBtn.addEventListener('click', reload);
+      filter.addEventListener('change', applyFilter);
+      applyFilter();
+    })();
+  </script>
+</body>
+</html>

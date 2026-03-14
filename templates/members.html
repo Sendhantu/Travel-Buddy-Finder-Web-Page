@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Trip Members | Travel Buddy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:            #f0ede8;
+      --bg2:           #e8e4de;
+      --surface:       #faf9f7;
+      --surface2:      #f2efe9;
+      --border:        rgba(0,0,0,0.07);
+      --muted:         #8c8680;
+      --text:          #1a1714;
+      --text2:         #3d3a36;
+      --primary:       #e8622a;
+      --primary-light: #fde8dc;
+      --primary-dark:  #c44e1c;
+      --success:       #2a7d4f;
+      --success-light: #d4f0e2;
+      --danger:        #c0392b;
+      --danger-light:  #fde8e6;
+      --warning:       #b45309;
+      --warning-light: #fef3c7;
+      --info:          #1d6fa4;
+      --info-light:    #dbeafe;
+      --font-head: 'Sora', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --shadow-sm:   0 2px 8px rgba(0,0,0,0.06);
+      --shadow-md:   0 6px 20px rgba(0,0,0,0.09);
+      --shadow-lg:   0 12px 32px rgba(0,0,0,0.12);
+      --shadow-card: 0 4px 16px rgba(0,0,0,0.07);
+      --focus-ring:  0 0 0 3px rgba(232,98,42,0.3);
+      --transition:  .2s cubic-bezier(.4,0,.2,1);
+    }
+
+    :root[data-theme="dark"] {
+      --bg:            #0e0d0b;
+      --bg2:           #161410;
+      --surface:       #1c1a17;
+      --surface2:      #242118;
+      --border:        rgba(255,255,255,0.07);
+      --muted:         #7a7470;
+      --text:          #f0ede8;
+      --text2:         #c8c4be;
+      --primary:       #f07540;
+      --primary-light: rgba(240,117,64,0.15);
+      --primary-dark:  #e8622a;
+      --success:       #34d399; --success-light: rgba(52,211,153,0.12);
+      --danger:        #f87171; --danger-light:  rgba(248,113,113,0.12);
+      --warning:       #fbbf24; --warning-light: rgba(251,191,36,0.12);
+      --info:          #60a5fa; --info-light:    rgba(96,165,250,0.12);
+      --shadow-sm:   0 2px 8px rgba(0,0,0,0.4);
+      --shadow-md:   0 6px 20px rgba(0,0,0,0.5);
+      --shadow-lg:   0 12px 32px rgba(0,0,0,0.6);
+      --shadow-card: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    :root[data-theme="high-contrast"] {
+      --bg:#000; --bg2:#000; --surface:#000; --surface2:#111;
+      --border:rgba(255,255,255,0.3); --muted:#aaa; --text:#fff; --text2:#ddd;
+      --primary:#ff0; --primary-light:#222200; --primary-dark:#ffd400;
+      --success:#0f0; --success-light:#002200;
+      --danger:#f00;  --danger-light:#220000;
+      --warning:#f90; --warning-light:#221100;
+      --info:#0ff;    --info-light:#002222;
+      --shadow-sm:none; --shadow-md:none; --shadow-lg:none; --shadow-card:none;
+      --focus-ring: 0 0 0 3px #fff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+    :focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+
+    /* ─── SKIP LINK ─── */
+    .skip-link {
+      position: fixed; top: -100px; left: 16px; z-index: 999;
+      background: var(--primary); color: #fff; padding: 10px 18px;
+      border-radius: var(--radius-md); font-weight: 700; transition: top .2s;
+    }
+    .skip-link:focus { top: 16px; }
+
+    /* ─── TOAST ─── */
+    #toast-container {
+      position: fixed; bottom: 28px; right: 28px; z-index: 900;
+      display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+    }
+    .toast {
+      background: var(--surface); color: var(--text);
+      padding: 12px 18px; border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg); font-weight: 600; font-size: 14px;
+      display: flex; align-items: center; gap: 10px;
+      animation: toastIn .3s ease forwards;
+      pointer-events: auto; border-left: 4px solid var(--primary);
+    }
+    .toast.success { border-color: var(--success); }
+    .toast.danger  { border-color: var(--danger); }
+    .toast.warning { border-color: var(--warning); }
+    @keyframes toastIn  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateY(12px); } }
+
+    /* ─── CONFIRM DIALOG ─── */
+    .confirm-overlay {
+      position: fixed; inset: 0; z-index: 800;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      animation: fadeIn .2s ease;
+    }
+    .confirm-overlay.hidden { display: none; }
+    .confirm-box {
+      background: var(--surface); border-radius: var(--radius-xl);
+      padding: 32px 28px; max-width: 400px; width: 90%;
+      box-shadow: var(--shadow-lg); text-align: center;
+    }
+    .confirm-box .cicon { font-size: 40px; margin-bottom: 12px; display: block; }
+    .confirm-box h3 { font-family: var(--font-head); font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+    .confirm-box p  { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+    .confirm-btns   { display: flex; gap: 12px; justify-content: center; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+    /* ─── HEADER ─── */
+    header.header {
+      background: var(--surface);
+      height: 66px; padding: 0 28px;
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+      box-shadow: var(--shadow-sm); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 40;
+    }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; color: var(--text2);
+      background: var(--surface2); border: 1px solid var(--border);
+      transition: all var(--transition);
+    }
+    .back-btn:hover { background: var(--bg2); color: var(--text); }
+    .brand-logo {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--primary);
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .header-title { font-family: var(--font-head); font-size: 16px; font-weight: 800; }
+    .header-title span { color: var(--primary); }
+
+    #themeToggle {
+      width: 38px; height: 38px; border-radius: var(--radius-sm);
+      background: var(--surface2); color: var(--text);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; border: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+    #themeToggle:hover { background: var(--bg2); }
+
+    /* ─── PAGE ─── */
+    .page { max-width: 1300px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    /* ─── TRIP BANNER ─── */
+    .trip-banner {
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      padding: 24px 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      box-shadow: var(--shadow-card); border: 1px solid var(--border);
+      margin-bottom: 24px; position: relative; overflow: hidden;
+    }
+    .trip-banner::before {
+      content: ''; position: absolute; right: -30px; top: -30px;
+      width: 180px; height: 180px; border-radius: 50%;
+      background: radial-gradient(circle, var(--primary-light) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .trip-banner-info h2 {
+      font-family: var(--font-head); font-size: 20px; font-weight: 800; margin-bottom: 4px;
+    }
+    .trip-banner-info h2 span { color: var(--primary); }
+    .trip-banner-info p { font-size: 13px; color: var(--muted); }
+    .trip-banner-meta {
+      display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1;
+    }
+    .meta-pill {
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 6px 14px; border-radius: 999px;
+      font-size: 12px; font-weight: 600; color: var(--text2);
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    /* ─── STATS ROW ─── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 16px; margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--surface); border-radius: var(--radius-lg);
+      padding: 18px 20px; border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+      display: flex; align-items: center; gap: 14px;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .stat-icon {
+      width: 44px; height: 44px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .stat-icon.total   { background: var(--info-light); }
+    .stat-icon.pending { background: var(--warning-light); }
+    .stat-icon.approved{ background: var(--success-light); }
+    .stat-icon.earnings{ background: var(--primary-light); }
+    .stat-card h4 { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 3px; }
+    .stat-card .num { font-family: var(--font-head); font-size: 24px; font-weight: 800; line-height: 1; }
+
+    /* ─── CONTROLS ─── */
+    .controls-bar {
+      background: var(--surface); border-radius: var(--radius-lg);
+      padding: 16px 20px; border: 1px solid var(--border);
+      box-shadow: var(--shadow-card); margin-bottom: 20px;
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    }
+    .search-wrap {
+      flex: 1; min-width: 200px;
+      position: relative; display: flex; align-items: center;
+    }
+    .search-wrap .ico { position: absolute; left: 12px; font-size: 15px; color: var(--muted); pointer-events: none; }
+    .search-wrap input {
+      width: 100%; padding: 9px 12px 9px 36px;
+      border-radius: var(--radius-md); border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text);
+      font-family: var(--font-body); font-size: 14px;
+      transition: box-shadow var(--transition), border-color var(--transition);
+    }
+    .search-wrap input::placeholder { color: var(--muted); }
+    .search-wrap input:focus { box-shadow: var(--focus-ring); border-color: var(--primary); outline: none; }
+
+    .ctrl-select {
+      padding: 9px 12px; border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text);
+      font-family: var(--font-body); font-size: 13px; font-weight: 600;
+      cursor: pointer;
+    }
+    .ctrl-select:focus { outline: none; box-shadow: var(--focus-ring); }
+
+    .ctrl-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 16px; border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 700;
+      border: 1px solid transparent;
+      transition: all var(--transition);
+    }
+    .ctrl-btn.secondary { background: var(--info-light); color: var(--info); border-color: rgba(29,111,164,.15); }
+    .ctrl-btn.secondary:hover { background: var(--info); color: #fff; }
+    .ctrl-btn.approve { background: var(--success-light); color: var(--success); border-color: rgba(42,125,79,.15); }
+    .ctrl-btn.approve:hover { background: var(--success); color: #fff; }
+    .ctrl-btn.reject  { background: var(--danger-light);  color: var(--danger);  border-color: rgba(192,57,43,.15); }
+    .ctrl-btn.reject:hover  { background: var(--danger); color: #fff; }
+    .ctrl-btn.ghost   { background: var(--surface2); color: var(--text2); border-color: var(--border); }
+    .ctrl-btn.ghost:hover { background: var(--bg2); color: var(--text); }
+
+    .ctrl-divider { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+
+    /* ─── TABLE CARD ─── */
+    .table-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+
+    thead tr {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    }
+    th {
+      padding: 13px 16px;
+      font-family: var(--font-head);
+      font-size: 11px; font-weight: 700;
+      color: rgba(255,255,255,0.9);
+      text-transform: uppercase; letter-spacing: .6px;
+      text-align: left; white-space: nowrap;
+      cursor: pointer; user-select: none;
+      transition: background var(--transition);
+    }
+    th:hover { background: rgba(255,255,255,0.1); }
+    th.no-sort { cursor: default; }
+    th.no-sort:hover { background: transparent; }
+    .sort-icon { margin-left: 4px; opacity: .5; font-size: 10px; }
+    th.sorted-asc .sort-icon::after  { content: '▲'; opacity: 1; }
+    th.sorted-desc .sort-icon::after { content: '▼'; opacity: 1; }
+    th:not(.sorted-asc):not(.sorted-desc) .sort-icon::after { content: '⇅'; }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition), border-left var(--transition);
+      border-left: 3px solid transparent;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); border-left-color: var(--primary); }
+    tbody tr:focus-within { background: var(--surface2); border-left-color: var(--primary); }
+    tbody tr.selected { background: var(--primary-light); border-left-color: var(--primary); }
+
+    td {
+      padding: 13px 16px;
+      font-size: 13.5px; color: var(--text2);
+      vertical-align: middle;
+    }
+    td strong { color: var(--text); font-weight: 600; }
+
+    /* Avatar */
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), #f5a623);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-head); font-size: 13px; font-weight: 800;
+      color: #fff; flex-shrink: 0;
+    }
+    .member-cell { display: flex; align-items: center; gap: 10px; }
+    .member-name { font-weight: 600; color: var(--text); font-size: 14px; }
+
+    /* Amount cells */
+    .amount-grid { display: flex; flex-direction: column; gap: 3px; min-width: 120px; }
+    .amount-row  { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+    .amount-row .label { color: var(--muted); }
+    .amount-row .val   { font-weight: 700; }
+    .amount-row .val.paid { color: var(--success); }
+    .amount-row .val.rem  { color: var(--danger); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; white-space: nowrap;
+    }
+    .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .badge.pending  { background: var(--warning-light); color: var(--warning); }
+    .badge.approved { background: var(--success-light); color: var(--success); }
+    .badge.rejected { background: var(--danger-light);  color: var(--danger); }
+    .badge.paid     { background: var(--success-light); color: var(--success); }
+    .badge.partial  { background: var(--info-light);    color: var(--info); }
+    .badge.unpaid   { background: var(--warning-light); color: var(--warning); }
+
+    /* Row actions */
+    .row-actions { display: flex; gap: 6px; align-items: center; }
+    .btn-act {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 11px; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 700;
+      border: 1px solid transparent;
+      transition: all var(--transition);
+    }
+    .btn-act.approve { background: var(--success-light); color: var(--success); border-color: rgba(42,125,79,.15); }
+    .btn-act.approve:hover { background: var(--success); color: #fff; }
+    .btn-act.reject  { background: var(--danger-light);  color: var(--danger);  border-color: rgba(192,57,43,.15); }
+    .btn-act.reject:hover  { background: var(--danger);  color: #fff; }
+    .btn-act.chat    { background: var(--info-light);    color: var(--info);    border-color: rgba(29,111,164,.18); }
+    .btn-act.chat:hover    { background: var(--info);     color: #fff; }
+    .btn-act.loading { opacity: .6; pointer-events: none; }
+
+    /* Checkbox */
+    input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--primary);
+      cursor: pointer; border-radius: 4px;
+    }
+
+    /* Progress bar (payment) */
+    .pay-progress { margin-top: 5px; }
+    .pay-track { height: 4px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
+    .pay-fill  { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--success), #34d399); }
+
+    /* Empty state */
+    .empty-row td {
+      text-align: center; padding: 60px 24px;
+    }
+    .empty-icon { font-size: 44px; display: block; margin-bottom: 12px; }
+    .empty-title { font-family: var(--font-head); font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+    .empty-sub   { font-size: 13px; color: var(--muted); }
+
+    /* Table footer */
+    .table-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      flex-wrap: wrap;
+    }
+    .table-footer span { font-size: 13px; color: var(--muted); font-weight: 600; }
+
+    /* Export btn */
+    .export-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 700;
+      background: var(--surface2); color: var(--text2);
+      border: 1px solid var(--border);
+      transition: all var(--transition); cursor: pointer;
+    }
+    .export-btn:hover { background: var(--bg2); color: var(--text); }
+
+    /* Inline payment entry */
+    .payment-form {
+      display: flex; gap: 6px; align-items: center; margin-top: 8px;
+    }
+    .payment-form input {
+      width: 90px; padding: 5px 8px;
+      border-radius: var(--radius-sm); border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text);
+      font-size: 12px; font-family: var(--font-body);
+    }
+    .payment-form input:focus { outline: none; box-shadow: var(--focus-ring); border-color: var(--primary); }
+    .payment-form button {
+      padding: 5px 10px; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 700;
+      background: var(--primary); color: #fff;
+      transition: background var(--transition);
+    }
+    .payment-form button:hover { background: var(--primary-dark); }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      header.header { padding: 0 16px; }
+      .page { padding: 20px 16px 80px; }
+      .trip-banner { flex-direction: column; align-items: flex-start; }
+      .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .stat-card { padding: 14px; }
+      .controls-bar { gap: 8px; }
+      .header-title { display: none; }
+    }
+
+    @keyframes rowIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    tbody tr { animation: rowIn .25s ease both; }
+    tbody tr:nth-child(1)  { animation-delay: .04s; }
+    tbody tr:nth-child(2)  { animation-delay: .08s; }
+    tbody tr:nth-child(3)  { animation-delay: .12s; }
+    tbody tr:nth-child(4)  { animation-delay: .16s; }
+    tbody tr:nth-child(5)  { animation-delay: .20s; }
+    tbody tr:nth-child(6)  { animation-delay: .24s; }
+  </style>
+</head>
+<body>
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- CONFIRM DIALOG -->
+  <div class="confirm-overlay hidden" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="confirm-box">
+      <span class="cicon" id="confirmIcon">⚠️</span>
+      <h3 id="confirmTitle">Are you sure?</h3>
+      <p id="confirmMsg">This action cannot be undone.</p>
+      <div class="confirm-btns">
+        <button class="ctrl-btn ghost" id="confirmCancel">Cancel</button>
+        <button class="ctrl-btn" id="confirmOk">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="header" role="banner">
+    <div class="header-left">
+      <div class="brand-logo" aria-hidden="true">🌍</div>
+      <span class="header-title">Travel<span>Buddy</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <a href="{{ url_for('mainpage', view='mine') }}" class="back-btn">← Back to My Trips</a>
+      <button id="themeToggle" aria-label="Toggle color theme">☀️</button>
+    </div>
+  </header>
+
+  <main id="mainContent" class="page" role="main">
+
+    <!-- TRIP BANNER -->
+    <div class="trip-banner">
+      <div class="trip-banner-info">
+        <h2>👥 Trip <span>Members</span></h2>
+        <p>Manage join requests, approve members, and track payments.</p>
+      </div>
+      <div class="trip-banner-meta">
+        <div class="meta-pill">📅 <span id="todayDate"></span></div>
+        <div class="meta-pill" id="capacityPill">👥 Loading…</div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <section class="stats-row" aria-label="Member statistics">
+      <div class="stat-card">
+        <div class="stat-icon total">🗂️</div>
+        <div>
+          <h4>Total Requests</h4>
+          <div class="num" id="statTotal">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon pending">⏳</div>
+        <div>
+          <h4>Pending</h4>
+          <div class="num" id="statPending">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon approved">✅</div>
+        <div>
+          <h4>Approved</h4>
+          <div class="num" id="statApproved">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon earnings">💰</div>
+        <div>
+          <h4>Total Collected</h4>
+          <div class="num" id="statEarnings">₹0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTROLS -->
+    <div class="controls-bar" role="region" aria-label="Member controls">
+      <div class="search-wrap">
+        <span class="ico" aria-hidden="true">🔍</span>
+        <label for="search" class="sr-only">Search members</label>
+        <input id="search" type="search" placeholder="Search by name or contact…" autocomplete="off">
+      </div>
+
+      <label for="filterStatus" class="sr-only">Filter by status</label>
+      <select id="filterStatus" class="ctrl-select" aria-label="Filter by status">
+        <option value="all">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+
+      <label for="filterPayment" class="sr-only">Filter by payment</label>
+      <select id="filterPayment" class="ctrl-select" aria-label="Filter by payment">
+        <option value="all">All Payments</option>
+        <option value="paid">Paid</option>
+        <option value="partial">Partial</option>
+        <option value="unpaid">Unpaid</option>
+      </select>
+
+      <button class="ctrl-btn ghost" id="clearFilters">✕ Clear</button>
+
+      <div class="ctrl-divider" aria-hidden="true"></div>
+
+      <button class="ctrl-btn approve" id="bulkApproveBtn">✔ Approve Selected</button>
+      <button class="ctrl-btn reject"  id="bulkRejectBtn">✖ Reject Selected</button>
+
+      <div class="ctrl-divider" aria-hidden="true"></div>
+
+      <button class="export-btn" id="exportCsv" title="Export to CSV">⬇ Export CSV</button>
+
+      <form id="bulkForm" method="POST" style="display:none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="ids" id="bulkIds">
+      </form>
+    </div>
+
+    <!-- TABLE -->
+    <section class="table-card" aria-label="Members table">
+      <div class="table-scroll">
+        <table role="table">
+          <thead>
+            <tr>
+              <th class="no-sort" scope="col">
+                <input type="checkbox" id="selectAll" aria-label="Select all visible members">
+              </th>
+              <th scope="col" data-col="index">#<span class="sort-icon"></span></th>
+              <th scope="col" data-col="name">Name<span class="sort-icon"></span></th>
+              <th scope="col" data-col="contact">Contact<span class="sort-icon"></span></th>
+              <th scope="col" data-col="language">Language<span class="sort-icon"></span></th>
+              <th scope="col" data-col="paid">Paid<span class="sort-icon"></span></th>
+              <th scope="col" data-col="remaining">Remaining<span class="sort-icon"></span></th>
+              <th scope="col" data-col="payment">Payment<span class="sort-icon"></span></th>
+              <th scope="col" data-col="status">Status<span class="sort-icon"></span></th>
+              <th class="no-sort" scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody id="membersTbody">
+            {% for m in members %}
+            <tr data-id="{{ m.id }}"
+                data-status="{{ m.status }}"
+                data-payment="{{ m.payment_status }}"
+                data-paid="{{ m.amount_paid or 0 }}"
+                data-remaining="{{ m.remaining or 0 }}"
+                data-name="{{ m.member_name|lower }}"
+                data-contact="{{ m.contact_no }}">
+
+              <!-- Checkbox -->
+              <td>
+                <input type="checkbox" class="row-select" value="{{ m.id }}"
+                       aria-label="Select {{ m.member_name }}">
+              </td>
+
+              <!-- Index -->
+              <td>{{ loop.index }}</td>
+
+              <!-- Name with avatar -->
+              <td>
+                <div class="member-cell">
+                  <div class="avatar" aria-hidden="true">
+                    {{ m.member_name[0]|upper }}
+                  </div>
+                  <span class="member-name">{{ m.member_name }}</span>
+                </div>
+              </td>
+
+              <!-- Contact -->
+              <td>{{ m.contact_no }}</td>
+
+              <!-- Language -->
+              <td>{{ m.language }}</td>
+
+              <!-- Paid -->
+              <td>
+                {% if m.status == 'approved' %}
+                  <strong style="color:var(--success);">₹ {{ "%.2f"|format(m.amount_paid or 0) }}</strong>
+                  <div class="pay-progress" title="{{ ((m.amount_paid or 0) / m.amount_due * 100)|int if m.amount_due else 0 }}% paid">
+                    <div class="pay-track">
+                      <div class="pay-fill" style="width:{{ [((m.amount_paid or 0) / m.amount_due * 100)|int, 100]|min if m.amount_due else 0 }}%;"></div>
+                    </div>
+                  </div>
+                  <!-- Inline payment entry -->
+                  <form class="payment-form" method="POST" action="/payment/{{ m.id }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="post_id" value="{{ post_id }}">
+                    <input type="number" name="amount" placeholder="₹ Add" min="0.01" step="0.01"
+                           aria-label="Record payment for {{ m.member_name }}">
+                    <button type="submit">Log</button>
+                  </form>
+                {% else %}
+                  <span style="color:var(--muted);">—</span>
+                {% endif %}
+              </td>
+
+              <!-- Remaining -->
+              <td>
+                {% if m.status == 'approved' %}
+                  <strong style="color:{{ 'var(--danger)' if m.remaining > 0 else 'var(--success)' }};">
+                    ₹ {{ "%.2f"|format(m.remaining or 0) }}
+                  </strong>
+                {% else %}
+                  <span style="color:var(--muted);">—</span>
+                {% endif %}
+              </td>
+
+              <!-- Payment badge -->
+              <td>
+                <span class="badge {{ m.payment_status }}">
+                  <span class="dot"></span>
+                  {{ m.payment_status|capitalize }}
+                </span>
+              </td>
+
+              <!-- Status badge -->
+              <td>
+                <span class="badge {{ m.status }}">
+                  <span class="dot"></span>
+                  {{ m.status|capitalize }}
+                </span>
+              </td>
+
+              <!-- Actions -->
+              <td>
+                <div class="row-actions">
+                  {% if m.status == 'pending' %}
+                    <form method="POST" action="/approve_member/{{ m.id }}" class="act-form">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <button type="submit" class="btn-act approve"
+                              aria-label="Approve {{ m.member_name }}">
+                        ✔ Approve
+                      </button>
+                    </form>
+                    <form method="POST" action="/reject_member/{{ m.id }}" class="act-form">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <button type="submit" class="btn-act reject"
+                              aria-label="Reject {{ m.member_name }}">
+                        ✖ Reject
+                      </button>
+                    </form>
+                  {% elif m.status == 'approved' %}
+                    <span style="font-size:12px;color:var(--success);font-weight:700;">✔ Active</span>
+                  {% else %}
+                    <span style="font-size:12px;color:var(--danger);font-weight:700;">✖ Rejected</span>
+                  {% endif %}
+
+                  {% if m.user_id and m.status != 'rejected' %}
+                    <a href="{{ url_for('private_chat', user_id=m.user_id) }}"
+                       class="btn-act chat"
+                       aria-label="Chat with {{ m.member_name }}">
+                      💬 Chat
+                    </a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+
+            <!-- Empty state row (shown when no members) -->
+            {% if not members %}
+            <tr class="empty-row">
+              <td colspan="10">
+                <span class="empty-icon">🧳</span>
+                <div class="empty-title">No members yet</div>
+                <div class="empty-sub">No one has joined this trip yet.</div>
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table footer -->
+      <div class="table-footer">
+        <span id="visibleCount">Showing 0 members</span>
+        <span id="selectedCount" style="color:var(--primary);"></span>
+      </div>
+    </section>
+
+    <!-- No results (filtered) -->
+    <div id="noResults" style="display:none; text-align:center; padding:48px; color:var(--muted); font-weight:600;">
+      😕 No members match your search or filter.
+    </div>
+
+  </main>
+
+  <script>
+  (function(){
+
+    /* ── THEME ── */
+    const root   = document.documentElement;
+    const tBtn   = document.getElementById('themeToggle');
+    const THEMES = ['default','dark','high-contrast'];
+    const ICONS  = { default:'☀️', dark:'🌙', 'high-contrast':'⚡' };
+    let current  = localStorage.getItem('tb_theme') || 'default';
+
+    function applyTheme(t){
+      current = t;
+      t === 'default' ? root.removeAttribute('data-theme') : root.setAttribute('data-theme', t);
+      if(tBtn) tBtn.textContent = ICONS[t];
+      localStorage.setItem('tb_theme', t);
+    }
+    applyTheme(current);
+    if(tBtn) tBtn.addEventListener('click', ()=>{
+      applyTheme(THEMES[(THEMES.indexOf(current)+1) % THEMES.length]);
+    });
+
+    /* ── DATE ── */
+    const dateEl = document.getElementById('todayDate');
+    if(dateEl) dateEl.textContent = new Date().toLocaleDateString('en-IN',{
+      weekday:'short', day:'numeric', month:'short', year:'numeric'
+    });
+
+    /* ── TOAST ── */
+    function toast(msg, type='info', ms=3200){
+      const c = document.getElementById('toast-container');
+      if(!c) return;
+      const icons = { info:'ℹ️', success:'✅', danger:'❌', warning:'⚠️' };
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+      c.appendChild(el);
+      setTimeout(()=>{
+        el.style.animation = 'toastOut .3s ease forwards';
+        setTimeout(()=>el.remove(), 300);
+      }, ms);
+    }
+
+    /* ── CONFIRM DIALOG ── */
+    const overlay     = document.getElementById('confirmOverlay');
+    const confirmOk   = document.getElementById('confirmOk');
+    const confirmCancel = document.getElementById('confirmCancel');
+    let confirmCallback = null;
+
+    function showConfirm({ icon='⚠️', title='Are you sure?', msg='This cannot be undone.', okLabel='Confirm', okClass='reject' }){
+      return new Promise(resolve => {
+        document.getElementById('confirmIcon').textContent  = icon;
+        document.getElementById('confirmTitle').textContent = title;
+        document.getElementById('confirmMsg').textContent   = msg;
+        confirmOk.textContent = okLabel;
+        confirmOk.className   = `ctrl-btn ${okClass}`;
+        overlay.classList.remove('hidden');
+        confirmCallback = resolve;
+      });
+    }
+
+    confirmOk.addEventListener('click', ()=>{
+      overlay.classList.add('hidden');
+      if(confirmCallback) confirmCallback(true);
+    });
+    confirmCancel.addEventListener('click', ()=>{
+      overlay.classList.add('hidden');
+      if(confirmCallback) confirmCallback(false);
+    });
+    overlay.addEventListener('click', e=>{
+      if(e.target === overlay){
+        overlay.classList.add('hidden');
+        if(confirmCallback) confirmCallback(false);
+      }
+    });
+
+    /* ── REFS ── */
+    const tbody        = document.getElementById('membersTbody');
+    const searchInput  = document.getElementById('search');
+    const filterStatus = document.getElementById('filterStatus');
+    const filterPayment= document.getElementById('filterPayment');
+    const clearBtn     = document.getElementById('clearFilters');
+    const selectAll    = document.getElementById('selectAll');
+    const bulkApproveBtn = document.getElementById('bulkApproveBtn');
+    const bulkRejectBtn  = document.getElementById('bulkRejectBtn');
+    const bulkForm     = document.getElementById('bulkForm');
+    const bulkIdsInput = document.getElementById('bulkIds');
+    const exportBtn    = document.getElementById('exportCsv');
+    const visibleCount = document.getElementById('visibleCount');
+    const selectedCount= document.getElementById('selectedCount');
+    const capacityPill = document.getElementById('capacityPill');
+    const noResults    = document.getElementById('noResults');
+
+    if(!tbody) return;
+
+    function rows(){ return Array.from(tbody.querySelectorAll('tr:not(.empty-row)')); }
+
+    /* ── STATS ── */
+    function updateStats(){
+      const all      = rows();
+      const visible  = all.filter(r=>!r.hidden);
+      const approved = visible.filter(r=>r.dataset.status==='approved');
+      const pending  = visible.filter(r=>r.dataset.status==='pending');
+      const earnings = approved.reduce((s,r)=>s+Number(r.dataset.paid||0),0);
+
+      document.getElementById('statTotal').textContent    = visible.length;
+      document.getElementById('statPending').textContent  = pending.length;
+      document.getElementById('statApproved').textContent = approved.length;
+      document.getElementById('statEarnings').textContent = '₹'+earnings.toFixed(0);
+
+      if(visibleCount) visibleCount.textContent = `Showing ${visible.length} of ${all.length} member${all.length!==1?'s':''}`;
+      if(capacityPill) capacityPill.textContent = `👥 ${approved.length} approved`;
+
+      const sel = getSelectedIds().length;
+      if(selectedCount) selectedCount.textContent = sel > 0 ? `${sel} selected` : '';
+    }
+
+    /* ── FILTER ── */
+    function applyFilters(){
+      const q = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      const s = filterStatus ? filterStatus.value : 'all';
+      const p = filterPayment ? filterPayment.value : 'all';
+
+      let anyVisible = false;
+      rows().forEach(r=>{
+        const name    = r.dataset.name    || '';
+        const contact = r.dataset.contact || '';
+        const matchQ  = !q || name.includes(q) || contact.includes(q);
+        const matchS  = s==='all' || r.dataset.status===s;
+        const matchP  = p==='all' || r.dataset.payment===p;
+        const show    = matchQ && matchS && matchP;
+        r.hidden = !show;
+        if(show) anyVisible = true;
+      });
+
+      if(noResults) noResults.style.display = (!anyVisible && rows().length > 0) ? '' : 'none';
+      updateStats();
+    }
+
+    /* ── SORT ── */
+    let sortCol = null, sortDir = 1;
+
+    document.querySelectorAll('th[data-col]').forEach(th=>{
+      th.addEventListener('click', ()=>{
+        const col = th.dataset.col;
+        if(sortCol === col) sortDir *= -1;
+        else { sortCol = col; sortDir = 1; }
+
+        document.querySelectorAll('th[data-col]').forEach(t=>{
+          t.classList.remove('sorted-asc','sorted-desc');
+        });
+        th.classList.add(sortDir===1?'sorted-asc':'sorted-desc');
+
+        const allRows = rows();
+        allRows.sort((a,b)=>{
+          let av='', bv='';
+          if(col==='name')     { av=a.dataset.name;     bv=b.dataset.name; }
+          if(col==='contact')  { av=a.dataset.contact;  bv=b.dataset.contact; }
+          if(col==='language') { av=a.children[4].textContent.trim().toLowerCase(); bv=b.children[4].textContent.trim().toLowerCase(); }
+          if(col==='status')   { av=a.dataset.status;   bv=b.dataset.status; }
+          if(col==='payment')  { av=a.dataset.payment;  bv=b.dataset.payment; }
+          if(col==='paid')     { return (Number(a.dataset.paid)-Number(b.dataset.paid))*sortDir; }
+          if(col==='remaining'){ return (Number(a.dataset.remaining)-Number(b.dataset.remaining))*sortDir; }
+          if(col==='index')    { return (parseInt(a.children[1].textContent)-parseInt(b.children[1].textContent))*sortDir; }
+          return av.localeCompare(bv)*sortDir;
+        });
+        allRows.forEach(r=>tbody.appendChild(r));
+      });
+    });
+
+    /* ── SELECT ── */
+    function getSelectedIds(){
+      return Array.from(document.querySelectorAll('.row-select:checked')).map(cb=>cb.value);
+    }
+
+    if(selectAll){
+      selectAll.addEventListener('change', ()=>{
+        const visRows = rows().filter(r=>!r.hidden);
+        visRows.forEach(r=>{
+          const cb = r.querySelector('.row-select');
+          if(cb) cb.checked = selectAll.checked;
+          r.classList.toggle('selected', selectAll.checked);
+        });
+        updateStats();
+      });
+    }
+
+    tbody.addEventListener('change', e=>{
+      if(e.target.classList.contains('row-select')){
+        e.target.closest('tr').classList.toggle('selected', e.target.checked);
+        const visRows  = rows().filter(r=>!r.hidden);
+        const allChecked = visRows.every(r=>r.querySelector('.row-select')?.checked);
+        if(selectAll) selectAll.checked = allChecked && visRows.length>0;
+        updateStats();
+      }
+    });
+
+    /* ── BULK ACTIONS ── */
+    if(bulkApproveBtn){
+      bulkApproveBtn.addEventListener('click', async ()=>{
+        const ids = getSelectedIds();
+        if(!ids.length){ toast('Select at least one member.','warning'); return; }
+        const ok = await showConfirm({
+          icon:'✔', title:`Approve ${ids.length} member${ids.length>1?'s':''}?`,
+          msg:'Approved members will be added to the trip.',
+          okLabel:'Yes, Approve', okClass:'approve'
+        });
+        if(!ok) return;
+        bulkIdsInput.value = ids.join(',');
+        bulkForm.action = '/bulk_approve_members';
+        toast('Approving members…','success',2000);
+        bulkForm.submit();
+      });
+    }
+
+    if(bulkRejectBtn){
+      bulkRejectBtn.addEventListener('click', async ()=>{
+        const ids = getSelectedIds();
+        if(!ids.length){ toast('Select at least one member.','warning'); return; }
+        const ok = await showConfirm({
+          icon:'✖', title:`Reject ${ids.length} member${ids.length>1?'s':''}?`,
+          msg:'This will decline their join request.',
+          okLabel:'Yes, Reject', okClass:'reject'
+        });
+        if(!ok) return;
+        bulkIdsInput.value = ids.join(',');
+        bulkForm.action = '/bulk_reject_members';
+        toast('Rejecting members…','danger',2000);
+        bulkForm.submit();
+      });
+    }
+
+    /* ── INDIVIDUAL APPROVE/REJECT with loading state ── */
+    document.querySelectorAll('.act-form').forEach(form=>{
+      form.addEventListener('submit', async e=>{
+        e.preventDefault();
+        const btn      = form.querySelector('button');
+        const isApprove= btn.classList.contains('approve');
+        const memberRow= form.closest('tr');
+        const name     = memberRow ? memberRow.dataset.name : 'this member';
+
+        const ok = await showConfirm(isApprove
+          ? { icon:'✔', title:`Approve ${name}?`, msg:'They will be added to the trip.', okLabel:'Approve', okClass:'approve' }
+          : { icon:'✖', title:`Reject ${name}?`,  msg:'Their request will be declined.',  okLabel:'Reject',  okClass:'reject' }
+        );
+        if(!ok) return;
+
+        btn.classList.add('loading');
+        btn.textContent = '…';
+        toast(isApprove?'Approving…':'Rejecting…', isApprove?'success':'danger', 1800);
+        form.submit();
+      });
+    });
+
+    /* ── CLEAR FILTERS ── */
+    if(clearBtn){
+      clearBtn.addEventListener('click', ()=>{
+        if(searchInput)  searchInput.value  = '';
+        if(filterStatus) filterStatus.value = 'all';
+        if(filterPayment)filterPayment.value= 'all';
+        applyFilters();
+      });
+    }
+
+    /* ── EXPORT CSV ── */
+    if(exportBtn){
+      exportBtn.addEventListener('click', ()=>{
+        const visRows = rows().filter(r=>!r.hidden);
+        if(!visRows.length){ toast('No data to export.','warning'); return; }
+
+        const headers = ['#','Name','Contact','Language','Paid','Remaining','Payment','Status'];
+        const csvRows = [headers.join(',')];
+
+        visRows.forEach((r,i)=>{
+          const cols = [
+            i+1,
+            `"${r.dataset.name}"`,
+            `"${r.dataset.contact}"`,
+            `"${r.children[4].textContent.trim()}"`,
+            r.dataset.paid,
+            r.dataset.remaining,
+            r.dataset.payment,
+            r.dataset.status
+          ];
+          csvRows.push(cols.join(','));
+        });
+
+        const blob = new Blob([csvRows.join('\n')], { type:'text/csv' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url;
+        a.download = `trip-members-${Date.now()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('CSV exported!','success');
+      });
+    }
+
+    /* ── EVENT LISTENERS ── */
+    if(searchInput)  searchInput.addEventListener('input', applyFilters);
+    if(filterStatus) filterStatus.addEventListener('change', applyFilters);
+    if(filterPayment)filterPayment.addEventListener('change', applyFilters);
+
+    applyFilters();
+
+  })();
+  </script>
+</body>
+</html>

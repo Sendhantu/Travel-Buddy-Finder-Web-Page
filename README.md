@@ -1,5 +1,3 @@
-# Travel-Buddy-Finder-Web-Page
-This Travel Buddy Finder Web Page helps find travellers a group and host a group to travel together, either Host or Traveller can choose from where they want to and with whom they want to.
 # TravelBuddyFinder
 
 TravelBuddyFinder is a Flask-based travel companion platform where users can create trips, request to join trips, manage host approvals, chat with members, and receive trip-related updates. The project also includes admin moderation tools, support workflows, reviews, and a development-friendly notification system.

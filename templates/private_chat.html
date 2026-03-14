@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Travel Buddy | Personal Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f0ede8;--surface:#faf9f7;--surface2:#f2efe9;--border:rgba(0,0,0,.08);
+      --text:#1a1714;--muted:#847d76;--primary:#e8622a;--primary-dark:#c44e1c;--danger:#c0392b;--ok:#2a7d4f;
+      --radius:14px;--shadow:0 10px 28px rgba(0,0,0,.09);--focus:0 0 0 3px rgba(232,98,42,.28);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'DM Sans',sans-serif;
+      background:radial-gradient(circle at 90% 8%, rgba(232,98,42,.13), transparent 28%), var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      -webkit-font-smoothing:antialiased;
+    }
+    a{text-decoration:none;color:inherit}
+    button,input,textarea{font-family:'DM Sans',sans-serif}
+    :focus-visible{outline:none;box-shadow:var(--focus)}
+
+    .topbar{
+      position:sticky;top:0;z-index:30;
+      border-bottom:1px solid var(--border);
+      background:rgba(250,249,247,.95);backdrop-filter:blur(9px);
+      padding:10px 14px;display:grid;gap:8px;
+    }
+    .toprow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .left{display:flex;align-items:center;gap:10px;min-width:0}
+    .back{border:1px solid var(--border);background:var(--surface2);border-radius:999px;padding:7px 11px;font-size:12px;font-weight:700;white-space:nowrap}
+    .identity{min-width:0}
+    .identity h1{font-family:'Sora',sans-serif;font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .identity p{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+    .dot{width:8px;height:8px;border-radius:50%;background:#c2bbb2;display:inline-block}
+    .dot.online{background:var(--ok);box-shadow:0 0 0 3px rgba(42,125,79,.2)}
+    .right{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .btn{border:1px solid var(--border);background:var(--surface2);border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;color:#4a433b;cursor:pointer}
+    .btn.active{background:#fde8dc;color:var(--primary);border-color:rgba(232,98,42,.3)}
+    .btn.danger{color:var(--danger);border-color:rgba(192,57,43,.3);background:#fde8e6}
+    .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+
+    /* ── HEADER AVATAR (other user) ── */
+    .user-avatar-wrap{position:relative;flex-shrink:0;}
+    .user-avatar{
+      width:42px;height:42px;border-radius:50%;
+      background:linear-gradient(135deg,var(--primary),#f5a623);
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:#fff;
+    }
+    .online-ring{
+      position:absolute;bottom:1px;right:1px;
+      width:11px;height:11px;border-radius:50%;
+      border:2px solid var(--surface);
+      background:#c2bbb2;
+    }
+    .online-ring.online{background:var(--ok);}
+
+    /* ── MSG AVATARS ── */
+    .msg{display:flex;gap:8px;align-items:flex-end;}
+    .msg.me{flex-direction:row-reverse;}
+    .msg-avatar{
+      width:30px;height:30px;border-radius:50%;flex-shrink:0;margin-bottom:2px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:800;color:#fff;
+      background:linear-gradient(135deg,#1d6fa4,#60a5fa);
+    }
+
+    /* ── TYPING INDICATOR ── */
+    .typing-bar{display:none;align-items:center;gap:8px;padding:4px 12px;}
+    .typing-bar.show{display:flex;}
+    .typing-dots{display:flex;gap:3px;align-items:center;}
+    .typing-dots span{width:6px;height:6px;border-radius:50%;background:#b0a898;
+      animation:typeBounce 1.2s ease-in-out infinite;}
+    .typing-dots span:nth-child(2){animation-delay:.2s;}
+    .typing-dots span:nth-child(3){animation-delay:.4s;}
+    @keyframes typeBounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
+    .typing-lbl{font-size:12px;color:var(--muted);font-weight:600;}
+
+    /* ── EMOJI PICKER ── */
+    .emoji-wrap{position:relative;}
+    .emoji-picker{
+      position:absolute;bottom:calc(100% + 8px);left:0;z-index:50;
+      background:var(--surface);border:1px solid var(--border);border-radius:14px;
+      padding:10px;box-shadow:0 8px 28px rgba(0,0,0,.13);
+      display:none;flex-wrap:wrap;gap:4px;width:220px;
+    }
+    .emoji-picker.open{display:flex;}
+    .emoji-picker button{border:none;background:none;font-size:18px;cursor:pointer;
+      padding:4px;border-radius:8px;transition:background .15s;line-height:1;}
+    .emoji-picker button:hover{background:var(--surface2);}
+
+    .tools{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+    .conn{font-size:12px;color:var(--muted);font-weight:700;margin-left:auto}
+
+    .search-panel{
+      display:none;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:var(--surface);
+      padding:10px;
+      gap:8px;
+      grid-template-columns:1fr 140px 140px 120px auto;
+      align-items:center;
+    }
+    .search-panel.open{display:grid}
+    .search-panel input,.search-panel select{border:1px solid var(--border);background:var(--surface2);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--text)}
+
+    .shell{max-width:1060px;margin:14px auto;padding:0 14px 76px}
+    .card{border:1px solid var(--border);border-radius:20px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-height:calc(100vh - 170px)}
+
+    .history{padding:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--surface2)}
+    .history button{border:1px solid var(--border);background:#fff;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:800;color:#4a433b;cursor:pointer}
+    .history button:disabled{opacity:.5;cursor:not-allowed}
+
+    .chat{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg,#faf9f7 0%, #f4f0e8 100%)}
+    .chat::-webkit-scrollbar{width:7px}
+    .chat::-webkit-scrollbar-thumb{background:#d6d0c8;border-radius:999px}
+
+    .day{display:flex;justify-content:center}
+    .day span{border:1px solid var(--border);background:var(--surface2);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:var(--muted)}
+    .unread-divider{display:flex;align-items:center;gap:8px}
+    .unread-divider:before,.unread-divider:after{content:'';flex:1;height:1px;background:rgba(232,98,42,.35)}
+    .unread-divider span{font-size:11px;font-weight:800;color:var(--primary);background:#fde8dc;border-radius:999px;padding:3px 8px;border:1px solid rgba(232,98,42,.3)}
+
+    /* msg layout handled above */
+    .bubble{max-width:min(78%,640px);border:1px solid var(--border);border-radius:14px;padding:9px 10px;background:var(--surface2);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+    .msg.me .bubble{background:var(--primary);border-color:var(--primary);color:#fff}
+    .bubble.pending{opacity:.88}
+    .bubble.failed{border-color:rgba(192,57,43,.35);box-shadow:0 0 0 2px rgba(192,57,43,.12)}
+    .bubble.flagged{border-style:dashed;border-color:rgba(180,83,9,.46)}
+    .sender{font-size:11px;font-weight:800;color:#5b534a;margin-bottom:3px}
+    .reply-box{font-size:11px;border:1px solid var(--border);background:#fff;border-radius:10px;padding:5px 7px;color:#5f584f;margin-bottom:6px}
+    .msg.me .reply-box{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35);color:#fff}
+    .text{font-size:14px;line-height:1.43;white-space:pre-wrap;word-break:break-word}
+    .attachment{margin-top:7px}
+    .attachment a{font-size:12px;font-weight:700;color:#1d6fa4;text-decoration:underline}
+    .msg.me .attachment a{color:#fff}
+
+    .meta{margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+    .chip{font-size:10px;font-weight:800;border-radius:999px;padding:2px 7px;border:1px solid var(--border);background:#fff;color:#605850}
+    .chip.warn{background:#fef3c7;border-color:rgba(180,83,9,.35);color:#8a4307}
+    .msg.me .chip{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.32);color:#fff}
+    .time{font-size:11px;color:var(--muted)}
+    .msg.me .time{color:rgba(255,255,255,.84)}
+
+    .reactions{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}
+    .reaction{font-size:11px;font-weight:700;border:1px solid var(--border);background:#fff;border-radius:999px;padding:3px 7px;color:#4a433b}
+    .msg.me .reaction{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.33);color:#fff}
+
+    .actions{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
+    .actions button{border:1px solid var(--border);background:#fff;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:800;color:#4a433b;cursor:pointer}
+    .actions button.danger{color:var(--danger);border-color:rgba(192,57,43,.33)}
+    .msg.me .actions button{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.33);color:#fff}
+
+    .composer{border-top:1px solid var(--border);padding:10px;background:var(--surface)}
+    .replying{display:none;margin-bottom:7px;border:1px solid var(--border);background:var(--surface2);border-radius:10px;padding:6px 8px;font-size:12px;align-items:center;gap:8px}
+    .replying.show{display:flex}
+    .replying .x{margin-left:auto;border:1px solid var(--border);background:#fff;border-radius:999px;padding:2px 7px;font-size:10px;font-weight:800;cursor:pointer}
+
+    .attach-preview{display:none;margin-bottom:7px;border:1px solid var(--border);background:var(--surface2);border-radius:10px;padding:6px 8px;font-size:12px;align-items:center;gap:8px}
+    .attach-preview.show{display:flex}
+    .attach-preview .x{margin-left:auto;border:1px solid var(--border);background:#fff;border-radius:999px;padding:2px 7px;font-size:10px;font-weight:800;cursor:pointer}
+
+    .compose-row{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:end}
+    .attach-btn{border:1px solid var(--border);background:var(--surface2);border-radius:12px;padding:10px;font-size:12px;font-weight:800;color:#4a433b;cursor:pointer;white-space:nowrap}
+    .msg-input{border:1px solid var(--border);background:var(--surface2);border-radius:12px;padding:10px 11px;min-height:44px;max-height:122px;resize:vertical;font-size:14px;color:var(--text)}
+    .send-btn{border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:12px;padding:0 15px;height:44px;font-size:13px;font-weight:800;cursor:pointer}
+    .send-btn:disabled{opacity:.55;cursor:not-allowed}
+
+    .aux{margin-top:7px;display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+    .aux input[type='datetime-local']{border:1px solid var(--border);background:var(--surface2);border-radius:10px;padding:7px 9px;font-size:12px}
+    .feedback{font-size:12px;color:var(--muted);font-weight:600;min-height:16px;margin-top:5px}
+    .feedback.error{color:var(--danger)}
+    .feedback.info{color:var(--ok)}
+
+    .jump{position:fixed;right:18px;bottom:92px;z-index:15;border:1px solid rgba(232,98,42,.34);background:#fde8dc;color:var(--primary);border-radius:999px;padding:8px 12px;font-size:11px;font-weight:800;display:none;cursor:pointer}
+
+    @media(max-width:760px){
+      .search-panel{grid-template-columns:1fr 1fr}
+      .card{min-height:calc(100vh - 140px)}
+      .bubble{max-width:88%}
+      .compose-row{grid-template-columns:1fr}
+      .send-btn{height:40px}
+      .jump{right:12px;bottom:84px}
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="toprow">
+      <div class="left">
+        <a class="back" href="{{ url_for('messages_page') }}">← Inbox</a>
+        <div class="user-avatar-wrap">
+          <div class="user-avatar">{{ (other_username or '?')[:1] | upper }}</div>
+          <span class="online-ring {{ 'online' if other_online else '' }}"></span>
+        </div>
+        <div class="identity">
+          <h1>{{ other_username }}</h1>
+          <p>
+            <span class="dot {{ 'online' if other_online else '' }}"></span>
+            {% if other_online %}
+              Online now
+            {% else %}
+              Last seen {{ other_last_seen_at or 'recently' }}
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <div class="right">
+        <button id="pinBtn" class="btn {{ 'active' if conversation_pinned else '' }}">📌 Pin</button>
+        <button id="archiveBtn" class="btn {{ 'active' if conversation_archived else '' }}">🗂 Archive</button>
+        <button id="muteBtn" class="btn {{ 'active' if conversation_muted_until else '' }}">🔕 Mute 1h</button>
+        <button id="blockBtn" class="btn danger">🚫 Block</button>
+        <button id="reportUserBtn" class="btn danger">⚑ Report</button>
+        {% if other_user_role == 'admin' %}
+          <button id="markIssueBtn" class="btn {{ 'active' if is_support else '' }}">{{ 'Issue Open' if is_support else 'Report Issue' }}</button>
+        {% endif %}
+      </div>
+    </div>
+    <div class="tools">
+      <button id="toggleSearch" class="btn">Search</button>
+      <a class="btn" href="/api/chat/private/{{ conversation_id }}/export?format=csv">Export CSV</a>
+      <a class="btn" href="/api/chat/private/{{ conversation_id }}/export?format=pdf">Export PDF</a>
+      <button id="jumpUnreadBtn" class="btn">Jump to unread</button>
+      <a class="btn" href="{{ url_for('notifications_page') }}">🔔 {{ unread_notifications or 0 }}</a>
+      <span class="conn" id="connStatus">Connecting...</span>
+    </div>
+    <div id="searchPanel" class="search-panel" aria-label="Search chat">
+      <input id="searchQ" type="search" placeholder="Keyword...">
+      <input id="dateFrom" type="date">
+      <input id="dateTo" type="date">
+      <select id="senderFilter">
+        <option value="">Any sender</option>
+        <option value="{{ session['user_id'] }}">Me</option>
+        <option value="{{ other_user_id }}">{{ other_username }}</option>
+      </select>
+      <button id="applySearch" class="btn primary">Apply</button>
+      <button id="clearSearch" class="btn">Clear</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="card">
+      <div class="history">
+        <button id="loadOlderBtn" {% if not has_older %}style="display:none"{% endif %}>Load older</button>
+        <span style="font-size:12px;color:var(--muted);font-weight:700">Read state: sent/delivered/seen per message</span>
+      </div>
+
+      <section id="chatBox" class="chat" aria-live="polite">
+        {% if messages %}
+          {% set ns = namespace(prev_day='', unread_inserted=false) %}
+          {% for msg in messages %}
+            {% set msg_day = (msg.created_at|string)[:10] %}
+            {% if msg_day != ns.prev_day %}
+            <div class="day" data-day="{{ msg_day }}"><span>{{ msg_day }}</span></div>
+            {% set ns.prev_day = msg_day %}
+            {% endif %}
+
+            {% if last_read_at and (msg.created_at > last_read_at) and (msg.sender_id != session['user_id']) and (not ns.unread_inserted) %}
+              <div class="unread-divider" id="unreadDivider"><span>New messages</span></div>
+              {% set ns.unread_inserted = true %}
+            {% endif %}
+
+            <article class="msg {% if msg.sender_id == session['user_id'] %}me{% else %}other{% endif %}" data-id="{{ msg.id }}" data-created="{{ msg.created_at }}" data-receipt="{{ msg.receipt_status or 'sent' }}" data-starred="{{ msg.starred or 0 }}">
+              {% if msg.sender_id != session['user_id'] %}
+              <div class="msg-avatar">{{ (msg.username or '?')[:1] | upper }}</div>
+              {% endif %}
+              <div class="bubble {% if msg.is_flagged %}flagged{% endif %}">
+                {% if msg.sender_id != session['user_id'] %}<div class="sender">{{ msg.username }}</div>{% endif %}
+
+                {% if msg.reply_to_id %}
+                  <div class="reply-box">↩ {{ msg.reply_to_text or 'Reply' }}</div>
+                {% endif %}
+
+                <div class="text">{{ msg.message }}</div>
+                {% if msg.attachment_url %}
+                  <div class="attachment"><a href="{{ msg.attachment_url }}" target="_blank" rel="noopener">📎 {{ msg.attachment_name or 'Attachment' }}</a></div>
+                {% endif %}
+
+                <div class="meta">
+                  <div class="chips">
+                    {% if msg.edited_at %}<span class="chip">Edited</span>{% endif %}
+                    {% if msg.is_flagged %}<span class="chip warn">Reported</span>{% endif %}
+                    {% if msg.starred %}<span class="chip">⭐ Starred</span>{% endif %}
+                    {% if msg.sender_id == session['user_id'] %}<span class="chip" data-kind="receipt">{{ msg.receipt_status or 'sent' }}</span>{% endif %}
+                  </div>
+                  <time class="time" datetime="{{ msg.created_at }}">{{ msg.created_at }}</time>
+                </div>
+
+                <div class="reactions">
+                  {% for emoji,count in (msg.reactions or {}).items() %}
+                    <span class="reaction" data-emoji="{{ emoji }}">{{ emoji }} {{ count }}</span>
+                  {% endfor %}
+                </div>
+
+                <div class="actions">
+                  <button type="button" data-action="reply">Reply</button>
+                  <button type="button" data-action="react" data-emoji="👍">👍</button>
+                  <button type="button" data-action="react" data-emoji="❤️">❤️</button>
+                  <button type="button" data-action="star">{{ 'Unstar' if msg.starred else 'Star' }}</button>
+                  {% if msg.sender_id == session['user_id'] %}
+                    <button type="button" data-action="edit">Edit</button>
+                    <button type="button" class="danger" data-action="delete">Delete</button>
+                  {% else %}
+                    <button type="button" data-action="flag">Report</button>
+                  {% endif %}
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        {% else %}
+          <p class="chip" style="align-self:center">No messages yet. Start conversation.</p>
+        {% endif %}
+      </section>
+
+      <footer class="composer" id="composerZone">
+        <!-- TYPING INDICATOR -->
+        <div id="typingBar" class="typing-bar" aria-live="polite">
+          <div class="msg-avatar" style="width:24px;height:24px;font-size:10px;">{{ (other_username or '?')[:1] | upper }}</div>
+          <div class="typing-dots"><span></span><span></span><span></span></div>
+          <span class="typing-lbl">{{ other_username }} is typing…</span>
+        </div>
+
+        <div id="replyingBox" class="replying"><span id="replyingText"></span><button class="x" id="clearReplyBtn" type="button">Clear</button></div>
+        <div id="attachPreview" class="attach-preview"><span id="attachText"></span><button class="x" id="clearAttachBtn" type="button">Remove</button></div>
+
+        <form id="composerForm" autocomplete="off">
+          <div class="compose-row">
+            <button type="button" class="attach-btn" id="attachBtn">📎</button>
+            <!-- EMOJI PICKER -->
+            <div class="emoji-wrap">
+              <button type="button" class="attach-btn" id="emojiBtn" title="Emoji">😊</button>
+              <div class="emoji-picker" id="emojiPicker">
+                {% for e in ['😀','😂','😍','🥰','😎','🤩','🥳','😅','🤔','😮','😢','😡','👍','👎','❤️','🔥','✈️','🏖','🏔','🗺','🎉','🎊','🍕','🍺','🤝','🙏','💪','🚀','⭐','🌟'] %}
+                <button type="button" data-emoji="{{ e }}">{{ e }}</button>
+                {% endfor %}
+              </div>
+            </div>
+            <textarea id="messageInput" class="msg-input" maxlength="2000" placeholder="Type a message…"></textarea>
+            <button id="sendBtn" class="send-btn" type="submit">Send ➤</button>
+          </div>
+
+          <div class="aux">
+            <input id="scheduleAt" type="datetime-local" title="Schedule message (optional)">
+            <button type="button" class="btn" id="scheduleBtn">Schedule</button>
+            <button type="button" class="btn" id="clearDraftBtn">Clear draft</button>
+            <input id="fileInput" type="file" hidden>
+            <span id="draftState" style="font-size:12px;color:var(--muted);font-weight:700;margin-left:auto">Draft synced</span>
+          </div>
+        </form>
+        <div id="sendFeedback" class="feedback" aria-live="polite"></div>
+      </footer>
+    </section>
+  </main>
+
+  <button id="floatingUnread" class="jump">New messages ↓</button>
+
+  <script>
+    (function(){
+      const socket = io();
+      const convoId = Number("{{ conversation_id }}");
+      const currentUserId = Number("{{ session['user_id'] }}");
+      const otherUserId = Number("{{ other_user_id }}");
+      const chatBox = document.getElementById('chatBox');
+      const connStatus = document.getElementById('connStatus');
+      const loadOlderBtn = document.getElementById('loadOlderBtn');
+      const messageInput = document.getElementById('messageInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const form = document.getElementById('composerForm');
+      const sendFeedback = document.getElementById('sendFeedback');
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      const fileInput = document.getElementById('fileInput');
+      const attachBtn = document.getElementById('attachBtn');
+      const attachPreview = document.getElementById('attachPreview');
+      const attachText = document.getElementById('attachText');
+      const clearAttachBtn = document.getElementById('clearAttachBtn');
+      const replyingBox = document.getElementById('replyingBox');
+      const replyingText = document.getElementById('replyingText');
+      const clearReplyBtn = document.getElementById('clearReplyBtn');
+      const scheduleAt = document.getElementById('scheduleAt');
+      const scheduleBtn = document.getElementById('scheduleBtn');
+      const clearDraftBtn = document.getElementById('clearDraftBtn');
+      const draftState = document.getElementById('draftState');
+      const searchPanel = document.getElementById('searchPanel');
+      const toggleSearch = document.getElementById('toggleSearch');
+      const applySearch = document.getElementById('applySearch');
+      const clearSearch = document.getElementById('clearSearch');
+      const searchQ = document.getElementById('searchQ');
+      const dateFrom = document.getElementById('dateFrom');
+      const dateTo = document.getElementById('dateTo');
+      const senderFilter = document.getElementById('senderFilter');
+      const jumpUnreadBtn = document.getElementById('jumpUnreadBtn');
+      const floatingUnread = document.getElementById('floatingUnread');
+      const pinBtn = document.getElementById('pinBtn');
+      const archiveBtn = document.getElementById('archiveBtn');
+      const muteBtn = document.getElementById('muteBtn');
+      const blockBtn = document.getElementById('blockBtn');
+      const reportUserBtn = document.getElementById('reportUserBtn');
+      const markIssueBtn = document.getElementById('markIssueBtn');
+
+      const initialDraft = {{ conversation_draft|tojson }};
+      let hasOlder = {{ 'true' if has_older else 'false' }};
+      let replyingTo = null;
+      let pendingUpload = null;
+      let sending = false;
+      let lastReadPing = 0;
+      let queue = [];
+      const pendingByClientId = new Map();
+      let draftTimer = null;
+
+      function setFeedback(text, type=''){ sendFeedback.textContent = text || ''; sendFeedback.className = ('feedback ' + (type || '')).trim(); }
+
+      function toDate(ts){
+        const d = new Date(String(ts || '').replace(' ', 'T'));
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+
+      function rel(ts){
+        const d = toDate(ts);
+        if(!d) return String(ts || '');
+        const sec = Math.floor((Date.now() - d.getTime()) / 1000);
+        if(sec < 10) return 'just now';
+        if(sec < 60) return `${sec}s ago`;
+        if(sec < 3600) return `${Math.floor(sec/60)}m ago`;
+        if(sec < 86400) return `${Math.floor(sec/3600)}h ago`;
+        if(sec < 604800) return `${Math.floor(sec/86400)}d ago`;
+        return d.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+      }
+
+      function abs(ts){ const d = toDate(ts); return d ? d.toLocaleString('en-IN') : String(ts || ''); }
+      function nearBottom(){ return (chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight) < 150; }
+      function scrollBottom(){ chatBox.scrollTop = chatBox.scrollHeight; }
+
+      function hydrateTime(){
+        chatBox.querySelectorAll('time.time').forEach((el)=>{ const ts = el.getAttribute('datetime') || el.textContent; el.textContent = rel(ts); el.title = abs(ts); });
+        chatBox.querySelectorAll('.day[data-day]').forEach((el)=>{
+          const key = el.dataset.day;
+          const today = new Date();
+          const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+          const y = new Date(); y.setDate(y.getDate()-1);
+          const yKey = `${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,'0')}-${String(y.getDate()).padStart(2,'0')}`;
+          const span = el.querySelector('span');
+          if(!span) return;
+          if(key === todayKey) span.textContent = 'Today';
+          else if(key === yKey) span.textContent = 'Yesterday';
+          else span.textContent = key;
+        });
+      }
+
+      function showUnreadJump(){
+        const divider = document.getElementById('unreadDivider');
+        if(!divider) { floatingUnread.style.display = 'none'; return; }
+        const rect = divider.getBoundingClientRect();
+        floatingUnread.style.display = rect.top < 0 ? '' : 'none';
+      }
+
+      function markRead(force){
+        if(document.visibilityState !== 'visible') return;
+        if(!force && !nearBottom()) return;
+        const now = Date.now();
+        if(now - lastReadPing < 1200) return;
+        lastReadPing = now;
+        fetch(`/api/chat/private/${encodeURIComponent(convoId)}/read`, {
+          method:'POST',
+          credentials:'same-origin',
+          headers:{'X-Requested-With':'XMLHttpRequest', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})}
+        }).catch(()=>{});
+      }
+
+      async function post(url, bodyObj){
+        const body = new URLSearchParams();
+        Object.keys(bodyObj || {}).forEach((k)=> body.set(k, bodyObj[k]));
+        const res = await fetch(url, {
+          method:'POST',
+          credentials:'same-origin',
+          headers:{
+            'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',
+            'X-Requested-With':'XMLHttpRequest',
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+          },
+          body: body.toString()
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok || data.ok === false) throw new Error(data.error || `Request failed (${res.status})`);
+        return data;
+      }
+
+      async function emitWithAck(event, payload, timeout=7000){
+        return await new Promise((resolve)=>{
+          let done = false;
+          const t = setTimeout(()=>{ if(done) return; done = true; resolve({ ok:false, code:'timeout' }); }, timeout);
+          socket.emit(event, payload, (ack)=>{ if(done) return; done = true; clearTimeout(t); resolve(ack || { ok:false, code:'unknown' }); });
+        });
+      }
+
+      function dayKey(ts){ const d = toDate(ts); if(!d) return ''; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+      function makeDay(key){ const d=document.createElement('div'); d.className='day'; d.dataset.day=key; d.innerHTML='<span>'+key+'</span>'; return d; }
+
+      function ensureDayAppend(ts){
+        const key = dayKey(ts);
+        if(!key) return;
+        const msgs = chatBox.querySelectorAll('.msg[data-created]');
+        const last = msgs.length ? msgs[msgs.length - 1] : null;
+        const prev = last ? dayKey(last.dataset.created) : '';
+        if(prev !== key) chatBox.appendChild(makeDay(key));
+      }
+
+      function receiptLabel(status){
+        if(status === 'seen') return 'Seen';
+        if(status === 'delivered') return 'Delivered';
+        return 'Sent';
+      }
+
+      function renderReactionRow(target, reactions){
+        const row = target.querySelector('.reactions');
+        if(!row) return;
+        row.innerHTML = '';
+        Object.keys(reactions || {}).forEach((emoji)=>{
+          const count = Number(reactions[emoji] || 0);
+          if(count <= 0) return;
+          const span = document.createElement('span');
+          span.className = 'reaction';
+          span.dataset.emoji = emoji;
+          span.textContent = `${emoji} ${count}`;
+          row.appendChild(span);
+        });
+      }
+
+      function messageById(id){ return id ? chatBox.querySelector(`.msg[data-id="${String(id)}"]`) : null; }
+      function messageByClient(clientId){ return clientId ? chatBox.querySelector(`.msg[data-client-id="${String(clientId)}"]`) : null; }
+
+      function createAction(label, action, extra={}){
+        const b = document.createElement('button');
+        b.type='button'; b.dataset.action=action; b.textContent=label;
+        Object.keys(extra).forEach((k)=> b.dataset[k]=extra[k]);
+        if(action==='delete' || action==='flag') b.classList.add('danger');
+        return b;
+      }
+
+      function messageNode(data, opts={}){
+        const mine = Number(data.sender_id) === currentUserId;
+        const m = document.createElement('article');
+        m.className = 'msg ' + (mine ? 'me' : 'other');
+        if(data.id) m.dataset.id = String(data.id);
+        if(opts.clientId) m.dataset.clientId = String(opts.clientId);
+        m.dataset.created = data.created_at || new Date().toISOString();
+        m.dataset.receipt = data.receipt_status || 'sent';
+        m.dataset.starred = String(data.starred ? 1 : 0);
+
+        // Avatar for non-me messages
+        if(!mine){
+          const av = document.createElement('div');
+          av.className = 'msg-avatar';
+          av.textContent = otherInitial;
+          m.appendChild(av);
+        }
+
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        if(data.is_flagged) bubble.classList.add('flagged');
+        if(opts.pending) bubble.classList.add('pending');
+        if(opts.failed) bubble.classList.add('failed');
+
+        if(!mine){ const sender = document.createElement('div'); sender.className='sender'; sender.textContent = data.username || 'User'; bubble.appendChild(sender); }
+        if(data.reply_to_id){ const rb = document.createElement('div'); rb.className='reply-box'; rb.textContent = '↩ ' + (data.reply_to_text || 'Reply'); bubble.appendChild(rb); }
+
+        const text = document.createElement('div'); text.className='text'; text.textContent = data.message || ''; bubble.appendChild(text);
+        if(data.attachment_url){ const at = document.createElement('div'); at.className='attachment'; at.innerHTML = `<a href="${data.attachment_url}" target="_blank" rel="noopener">📎 ${data.attachment_name || 'Attachment'}</a>`; bubble.appendChild(at); }
+
+        const meta = document.createElement('div'); meta.className='meta';
+        const chips = document.createElement('div'); chips.className='chips';
+        if(data.edited_at){ const c=document.createElement('span'); c.className='chip'; c.textContent='Edited'; chips.appendChild(c); }
+        if(data.is_flagged){ const c=document.createElement('span'); c.className='chip warn'; c.textContent='Reported'; chips.appendChild(c); }
+        if(data.starred){ const c=document.createElement('span'); c.className='chip'; c.dataset.kind='star'; c.textContent='⭐ Starred'; chips.appendChild(c); }
+        if(mine){ const c=document.createElement('span'); c.className='chip'; c.dataset.kind='receipt'; c.textContent = receiptLabel(data.receipt_status || 'sent'); chips.appendChild(c); }
+        meta.appendChild(chips);
+        const t = document.createElement('time'); t.className='time'; t.dateTime = data.created_at || new Date().toISOString(); t.textContent = rel(t.dateTime); t.title = abs(t.dateTime); meta.appendChild(t);
+        bubble.appendChild(meta);
+
+        const reactions = document.createElement('div'); reactions.className='reactions'; bubble.appendChild(reactions);
+        renderReactionRow({ querySelector:()=>reactions }, data.reactions || {});
+
+        const actions = document.createElement('div'); actions.className='actions';
+        actions.appendChild(createAction('Reply','reply'));
+        actions.appendChild(createAction('👍','react',{ emoji:'👍' }));
+        actions.appendChild(createAction('❤️','react',{ emoji:'❤️' }));
+        actions.appendChild(createAction(data.starred ? 'Unstar':'Star','star'));
+        if(mine){ actions.appendChild(createAction('Edit','edit')); actions.appendChild(createAction('Delete','delete')); }
+        else { actions.appendChild(createAction('Report','flag')); }
+        if(opts.failed){ actions.appendChild(createAction('Retry','retry')); }
+        bubble.appendChild(actions);
+
+        m.appendChild(bubble);
+        return m;
+      }
+
+      function appendMessage(data, opts={}){
+        if(data.id && messageById(data.id)) return;
+        const auto = nearBottom();
+        ensureDayAppend(data.created_at || new Date().toISOString());
+        const node = messageNode(data, opts);
+        chatBox.appendChild(node);
+        if(auto || Number(data.sender_id) === currentUserId) scrollBottom();
+        return node;
+      }
+
+      function prependMessages(rows){
+        if(!rows.length) return;
+        const before = chatBox.scrollHeight;
+        const first = chatBox.querySelector('.msg[data-created]');
+        const firstKey = first ? dayKey(first.dataset.created) : '';
+        const frag = document.createDocumentFragment();
+        let prevKey = '';
+        rows.forEach((r)=>{
+          if(r.id && messageById(r.id)) return;
+          const key = dayKey(r.created_at || '');
+          if(key && key !== prevKey){ frag.appendChild(makeDay(key)); prevKey = key; }
+          frag.appendChild(messageNode(r));
+        });
+        if(prevKey && firstKey && prevKey === firstKey){
+          const dup = chatBox.querySelector(`.day[data-day="${firstKey}"]`);
+          if(dup) dup.remove();
+        }
+        chatBox.prepend(frag);
+        chatBox.scrollTop = chatBox.scrollHeight - before;
+      }
+
+      function oldestId(){ const first = chatBox.querySelector('.msg[data-id]'); return first ? Number(first.dataset.id) : null; }
+
+      async function loadOlder(){
+        if(!hasOlder) return;
+        const beforeId = oldestId();
+        if(!beforeId) return;
+        loadOlderBtn.disabled = true;
+        const params = new URLSearchParams();
+        params.set('before_id', String(beforeId));
+        params.set('limit','50');
+        if(searchQ.value.trim()) params.set('q', searchQ.value.trim());
+        if(dateFrom.value) params.set('date_from', dateFrom.value);
+        if(dateTo.value) params.set('date_to', dateTo.value);
+        if(senderFilter.value) params.set('sender_id', senderFilter.value);
+        try{
+          const res = await fetch(`/api/chat/private/${encodeURIComponent(convoId)}/messages?` + params.toString(), { credentials:'same-origin' });
+          if(!res.ok) throw new Error('load failed');
+          const data = await res.json();
+          const rows = data.messages || [];
+          prependMessages(rows);
+          hasOlder = !!data.has_more;
+          if(!hasOlder) loadOlderBtn.style.display='none';
+        }catch(err){ console.error(err); }
+        loadOlderBtn.disabled = false;
+      }
+
+      function setReply(data){
+        replyingTo = { id: data.id, text: (data.message || '').slice(0, 110) };
+        replyingText.textContent = `Replying to: ${replyingTo.text}`;
+        replyingBox.classList.add('show');
+        messageInput.focus();
+      }
+
+      function clearReply(){ replyingTo = null; replyingBox.classList.remove('show'); replyingText.textContent=''; }
+
+      function setAttachment(file, uploadId=null){
+        pendingUpload = file ? { file, uploadId } : null;
+        if(!pendingUpload){ attachPreview.classList.remove('show'); attachText.textContent=''; return; }
+        attachText.textContent = `Attached: ${file.name}` + (uploadId ? ' (ready)' : ' (upload pending)');
+        attachPreview.classList.add('show');
+      }
+
+      async function uploadAttachmentIfNeeded(){
+        if(!pendingUpload || pendingUpload.uploadId) return pendingUpload ? pendingUpload.uploadId : null;
+        const fd = new FormData();
+        fd.append('file', pendingUpload.file);
+        const res = await fetch(`/api/chat/private/${encodeURIComponent(convoId)}/upload`, {
+          method:'POST',
+          credentials:'same-origin',
+          headers:{ 'X-Requested-With':'XMLHttpRequest', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
+          body: fd
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok || data.ok === false) throw new Error(data.error || 'Upload failed');
+        pendingUpload.uploadId = Number(data.upload_id);
+        setAttachment(pendingUpload.file, pendingUpload.uploadId);
+        return pendingUpload.uploadId;
+      }
+
+      function refreshSendState(){
+        const text = messageInput.value.trim();
+        sendBtn.disabled = !text && !pendingUpload;
+      }
+
+      function queueLocal(message, uploadId){
+        const clientId = `p_${Date.now()}_${Math.random().toString(16).slice(2,8)}`;
+        queue.push({ clientId, message, uploadId, replyToId: replyingTo ? replyingTo.id : null, status:'queued' });
+        const el = appendMessage({ sender_id: currentUserId, username:'You', message, created_at: new Date().toISOString(), id:null, is_flagged:0, edited_at:null, reply_to_id: replyingTo ? replyingTo.id : null, reply_to_text: replyingTo ? replyingTo.text : '', attachment_name: pendingUpload?.file?.name || '', attachment_url:'', reactions:{}, starred:0, receipt_status:'sent' }, { pending:true, clientId });
+        if(el) pendingByClientId.set(clientId, el);
+      }
+
+      function mapSendError(code){
+        if(code === 'rate_limited') return 'Sending too fast. Please wait.';
+        if(code === 'spam_limited') return 'Too many messages in short time.';
+        if(code === 'duplicate') return 'Duplicate message blocked.';
+        if(code === 'invalid_attachment') return 'Attachment rejected.';
+        if(code === 'forbidden') return 'You cannot send in this chat.';
+        return 'Unable to send message.';
+      }
+
+      function resolvePending(clientId, payload){
+        const el = messageByClient(clientId);
+        if(!el) return;
+        pendingByClientId.delete(clientId);
+        if(payload.id) el.dataset.id = String(payload.id);
+        el.removeAttribute('data-client-id');
+        const bubble = el.querySelector('.bubble');
+        bubble?.classList.remove('pending','failed');
+        if(payload.created_at){
+          el.dataset.created = payload.created_at;
+          const t = el.querySelector('time.time');
+          if(t){ t.dateTime = payload.created_at; t.textContent = rel(payload.created_at); t.title = abs(payload.created_at); }
+        }
+      }
+
+      function markPendingFailed(clientId, error){
+        const el = messageByClient(clientId);
+        if(!el) return;
+        el.querySelector('.bubble')?.classList.add('failed');
+        const actions = el.querySelector('.actions');
+        if(actions && !actions.querySelector('button[data-action="retry"]')) actions.appendChild(createAction('Retry','retry'));
+        setFeedback(error,'error');
+      }
+
+      async function flushQueue(){
+        if(sending || !socket.connected || !queue.length) return;
+        const item = queue.find((q)=>q.status !== 'sent');
+        if(!item) { queue = []; return; }
+        sending = true;
+        const ack = await emitWithAck('send_private_message', {
+          conversation_id: convoId,
+          message: item.message,
+          client_id: item.clientId,
+          reply_to_id: item.replyToId,
+          upload_id: item.uploadId
+        });
+        if(ack && ack.ok){
+          item.status = 'sent';
+          resolvePending(item.clientId, { id: ack.message_id, created_at: ack.created_at });
+          queue = queue.filter((q)=>q.status !== 'sent');
+          setFeedback('','');
+          markRead(true);
+        } else {
+          item.status = 'failed';
+          markPendingFailed(item.clientId, mapSendError((ack || {}).code));
+        }
+        sending = false;
+        setTimeout(flushQueue, 30);
+      }
+
+      async function applySearchFilter(){
+        const params = new URLSearchParams();
+        params.set('limit','100');
+        if(searchQ.value.trim()) params.set('q', searchQ.value.trim());
+        if(dateFrom.value) params.set('date_from', dateFrom.value);
+        if(dateTo.value) params.set('date_to', dateTo.value);
+        if(senderFilter.value) params.set('sender_id', senderFilter.value);
+        try{
+          const res = await fetch(`/api/chat/private/${encodeURIComponent(convoId)}/messages?` + params.toString(), { credentials:'same-origin' });
+          if(!res.ok) throw new Error('search failed');
+          const data = await res.json();
+          const rows = data.messages || [];
+          chatBox.innerHTML = '';
+          let prev = '';
+          rows.forEach((msg)=>{
+            const k = dayKey(msg.created_at || '');
+            if(k && k !== prev){ chatBox.appendChild(makeDay(k)); prev = k; }
+            chatBox.appendChild(messageNode(msg));
+          });
+          hasOlder = !!data.has_more;
+          loadOlderBtn.style.display = hasOlder ? '' : 'none';
+          hydrateTime();
+          scrollBottom();
+        }catch(err){ setFeedback(err.message || 'Search failed','error'); }
+      }
+
+      function updateReceiptOnNode(msgEl, status){
+        if(!msgEl) return;
+        msgEl.dataset.receipt = status;
+        const chip = msgEl.querySelector('.chip[data-kind="receipt"]');
+        if(chip) chip.textContent = receiptLabel(status);
+      }
+
+      async function setState(patch){
+        try{
+          await post(`/api/chat/private/${encodeURIComponent(convoId)}/state`, patch);
+          if('pinned' in patch) pinBtn.classList.toggle('active', Number(patch.pinned) === 1);
+          if('archived' in patch) archiveBtn.classList.toggle('active', Number(patch.archived) === 1);
+          if('mute_minutes' in patch) muteBtn.classList.add('active');
+        }catch(err){ setFeedback(err.message || 'State update failed','error'); }
+      }
+
+      async function saveDraft(force){
+        const value = messageInput.value || '';
+        draftState.textContent = force ? 'Saving draft...' : 'Draft updating...';
+        try{
+          await post(`/api/chat/private/${encodeURIComponent(convoId)}/draft`, { draft_text: value });
+          draftState.textContent = 'Draft synced';
+        }catch(err){ draftState.textContent = 'Draft sync failed'; }
+      }
+
+      messageInput.addEventListener('input', ()=>{
+        refreshSendState();
+        if(draftTimer) clearTimeout(draftTimer);
+        draftTimer = setTimeout(()=>saveDraft(false), 550);
+      });
+
+      clearDraftBtn.addEventListener('click', ()=>{ messageInput.value=''; refreshSendState(); saveDraft(true); });
+
+      form.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        if(!message && !pendingUpload) return;
+        try{
+          const uploadId = await uploadAttachmentIfNeeded();
+          queueLocal(message, uploadId);
+          messageInput.value = '';
+          clearReply();
+          setAttachment(null);
+          refreshSendState();
+          flushQueue();
+          saveDraft(true);
+        }catch(err){ setFeedback(err.message || 'Send failed','error'); }
+      });
+
+      scheduleBtn.addEventListener('click', async ()=>{
+        const message = messageInput.value.trim();
+        const runAt = scheduleAt.value;
+        if(!message || !runAt){ setFeedback('Enter message and schedule time','error'); return; }
+        try{
+          await post(`/api/chat/private/${encodeURIComponent(convoId)}/schedule`, { message, run_at: runAt.replace('T',' ') });
+          messageInput.value = ''; scheduleAt.value=''; clearReply(); refreshSendState(); saveDraft(true);
+          setFeedback('Message scheduled successfully','info');
+        }catch(err){ setFeedback(err.message || 'Schedule failed','error'); }
+      });
+
+      attachBtn.addEventListener('click', ()=>fileInput.click());
+      fileInput.addEventListener('change', ()=>{
+        const file = fileInput.files && fileInput.files[0];
+        if(!file) return;
+        setAttachment(file, null);
+        refreshSendState();
+      });
+      clearAttachBtn.addEventListener('click', ()=>{ fileInput.value=''; setAttachment(null); refreshSendState(); });
+      clearReplyBtn.addEventListener('click', clearReply);
+
+      const composerZone = document.getElementById('composerZone');
+      ['dragenter','dragover'].forEach((ev)=>composerZone.addEventListener(ev, (e)=>{ e.preventDefault(); composerZone.style.borderColor='rgba(232,98,42,.45)'; }));
+      ['dragleave','drop'].forEach((ev)=>composerZone.addEventListener(ev, (e)=>{ e.preventDefault(); composerZone.style.borderColor=''; }));
+      composerZone.addEventListener('drop', (e)=>{
+        const file = e.dataTransfer?.files?.[0];
+        if(!file) return;
+        fileInput.files = e.dataTransfer.files;
+        setAttachment(file, null);
+        refreshSendState();
+      });
+
+      chatBox.addEventListener('click', async (e)=>{
+        const btn = e.target.closest('button[data-action]');
+        if(!btn) return;
+        const action = btn.dataset.action;
+        const msgEl = btn.closest('.msg');
+        if(!msgEl) return;
+        const messageId = Number(msgEl.dataset.id || 0);
+        const clientId = msgEl.dataset.clientId;
+
+        if(action === 'retry' && clientId){
+          const item = queue.find((q)=>q.clientId === clientId);
+          if(!item) return;
+          item.status = 'queued';
+          msgEl.querySelector('.bubble')?.classList.remove('failed');
+          setFeedback('Retrying...','info');
+          flushQueue();
+          return;
+        }
+
+        if(action === 'reply'){
+          const text = msgEl.querySelector('.text')?.textContent || '';
+          setReply({ id: messageId, message: text });
+          return;
+        }
+
+        if(!messageId) return;
+        try{
+          if(action === 'edit'){
+            const textNode = msgEl.querySelector('.text');
+            const current = textNode ? textNode.textContent : '';
+            const next = window.prompt('Edit message', current || '');
+            if(next === null) return;
+            const trimmed = next.trim();
+            if(!trimmed) return;
+            const data = await post(`/api/chat/private/${encodeURIComponent(convoId)}/messages/${encodeURIComponent(messageId)}/edit`, { message: trimmed });
+            if(textNode) textNode.textContent = data.message || trimmed;
+            setFeedback('Message updated','info');
+            return;
+          }
+          if(action === 'delete'){
+            if(!window.confirm('Delete this message?')) return;
+            await post(`/api/chat/private/${encodeURIComponent(convoId)}/messages/${encodeURIComponent(messageId)}/delete`, {});
+            msgEl.remove();
+            setFeedback('Message deleted','info');
+            return;
+          }
+          if(action === 'flag'){
+            if(!window.confirm('Report this message?')) return;
+            await post(`/api/chat/private/${encodeURIComponent(convoId)}/messages/${encodeURIComponent(messageId)}/flag`, {});
+            msgEl.querySelector('.bubble')?.classList.add('flagged');
+            setFeedback('Message reported','info');
+            return;
+          }
+          if(action === 'react'){
+            const emoji = btn.dataset.emoji || '👍';
+            const data = await post(`/api/chat/private/${encodeURIComponent(convoId)}/messages/${encodeURIComponent(messageId)}/reaction`, { reaction: emoji });
+            renderReactionRow(msgEl, data.reactions || {});
+            return;
+          }
+          if(action === 'star'){
+            const data = await post(`/api/chat/private/${encodeURIComponent(convoId)}/messages/${encodeURIComponent(messageId)}/star`, {});
+            msgEl.dataset.starred = String(data.starred ? 1 : 0);
+            const hasChip = !!msgEl.querySelector('.chip[data-kind="star"]');
+            if(data.starred && !hasChip){
+              const c = document.createElement('span'); c.className='chip'; c.dataset.kind='star'; c.textContent='⭐ Starred';
+              msgEl.querySelector('.chips')?.appendChild(c);
+            }
+            if(!data.starred && hasChip){ msgEl.querySelector('.chip[data-kind="star"]')?.remove(); }
+            btn.textContent = data.starred ? 'Unstar' : 'Star';
+            return;
+          }
+        }catch(err){ setFeedback(err.message || 'Action failed','error'); }
+      });
+
+      pinBtn.addEventListener('click', ()=>setState({ pinned: pinBtn.classList.contains('active') ? 0 : 1 }));
+      archiveBtn.addEventListener('click', ()=>setState({ archived: archiveBtn.classList.contains('active') ? 0 : 1 }));
+      muteBtn.addEventListener('click', ()=>setState({ mute_minutes: 60 }));
+
+      blockBtn.addEventListener('click', async ()=>{
+        if(!window.confirm('Block this user?')) return;
+        try{ await post(`/api/chat/users/${encodeURIComponent(otherUserId)}/block`, { action:'block', reason:'chat abuse' }); setFeedback('User blocked','info'); }
+        catch(err){ setFeedback(err.message || 'Block failed','error'); }
+      });
+
+      reportUserBtn.addEventListener('click', async ()=>{
+        const reason = window.prompt('Reason for report', 'abuse');
+        if(reason === null) return;
+        try{ await post(`/api/chat/users/${encodeURIComponent(otherUserId)}/report`, { reason, details:'' }); setFeedback('User reported','info'); }
+        catch(err){ setFeedback(err.message || 'Report failed','error'); }
+      });
+
+      markIssueBtn?.addEventListener('click', async ()=>{
+        try{ await post(`/api/chat/private/${encodeURIComponent(convoId)}/support`, { priority:'high' }); markIssueBtn.classList.add('active'); markIssueBtn.textContent='Issue Open'; setFeedback('Issue marked for support','info'); }
+        catch(err){ setFeedback(err.message || 'Failed to mark issue','error'); }
+      });
+
+      toggleSearch.addEventListener('click', ()=>searchPanel.classList.toggle('open'));
+      applySearch.addEventListener('click', applySearchFilter);
+      clearSearch.addEventListener('click', ()=>{
+        searchQ.value=''; dateFrom.value=''; dateTo.value=''; senderFilter.value='';
+        window.location.reload();
+      });
+
+      jumpUnreadBtn.addEventListener('click', ()=>document.getElementById('unreadDivider')?.scrollIntoView({ behavior:'smooth', block:'center' }));
+      floatingUnread.addEventListener('click', ()=>document.getElementById('unreadDivider')?.scrollIntoView({ behavior:'smooth', block:'center' }));
+
+      loadOlderBtn?.addEventListener('click', loadOlder);
+      chatBox.addEventListener('scroll', ()=>{ markRead(false); showUnreadJump(); });
+      document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible') markRead(true); });
+      window.addEventListener('focus', ()=>markRead(true));
+
+      socket.on('connect', ()=>{
+        connStatus.textContent = 'Connected';
+        socket.emit('join_private', { conversation_id: convoId }, (ack)=>{
+          if(!ack || !ack.ok){ setFeedback('Unable to join room','error'); return; }
+          markRead(true);
+          flushQueue();
+        });
+      });
+      socket.on('disconnect', ()=>connStatus.textContent = 'Disconnected');
+      socket.on('connect_error', ()=>connStatus.textContent = 'Reconnecting...');
+
+      socket.on('private_message', (data)=>{
+        if(Number(data.conversation_id) !== convoId) return;
+        if(data.client_id && pendingByClientId.has(data.client_id)){ resolvePending(data.client_id, data); return; }
+        appendMessage(data);
+        if(Number(data.sender_id) !== currentUserId) markRead(false);
+        showUnreadJump();
+      });
+
+      socket.on('private_message_updated', (data)=>{
+        if(Number(data.conversation_id) !== convoId) return;
+        const msg = messageById(data.id); if(!msg) return;
+        const text = msg.querySelector('.text'); if(text) text.textContent = data.message || '';
+      });
+
+      socket.on('private_message_deleted', (data)=>{
+        if(Number(data.conversation_id) !== convoId) return;
+        messageById(data.id)?.remove();
+      });
+
+      socket.on('private_message_flagged', (data)=>{
+        if(Number(data.conversation_id) !== convoId) return;
+        messageById(data.id)?.querySelector('.bubble')?.classList.add('flagged');
+      });
+
+      socket.on('private_reaction_updated', (data)=>{
+        if(Number(data.conversation_id) !== convoId) return;
+        const msg = messageById(data.message_id); if(!msg) return;
+        renderReactionRow(msg, data.reactions || {});
+      });
+
+      socket.on('private_star_updated', (data)=>{
+        if(Number(data.conversation_id) !== convoId) return;
+        const msg = messageById(data.message_id); if(!msg) return;
+        if(Number(data.user_id) !== currentUserId) return;
+        msg.dataset.starred = String(data.starred ? 1 : 0);
+        const btn = msg.querySelector('button[data-action="star"]');
+        if(btn) btn.textContent = data.starred ? 'Unstar' : 'Star';
+      });
+
+      socket.on('private_receipts_updated', (data)=>{
+        if(Number(data.channel_id) !== convoId) return;
+        (data.rows || []).forEach((row)=>{ updateReceiptOnNode(messageById(row.message_id), row.status || 'sent'); });
+      });
+
+      socket.on('private_support_updated', (data)=>{
+        if(Number(data.conversation_id) !== convoId || !markIssueBtn) return;
+        markIssueBtn.classList.add('active');
+        markIssueBtn.textContent = 'Issue Open';
+      });
+
+      if(initialDraft && !messageInput.value){ messageInput.value = initialDraft; }
+      hydrateTime();
+      refreshSendState();
+      scrollBottom();
+      showUnreadJump();
+      markRead(true);
+
+      /* ── EMOJI PICKER ── */
+      const emojiBtn = document.getElementById('emojiBtn');
+      const emojiPicker = document.getElementById('emojiPicker');
+      if(emojiBtn && emojiPicker){
+        emojiBtn.addEventListener('click',(e)=>{ e.stopPropagation(); emojiPicker.classList.toggle('open'); });
+        emojiPicker.addEventListener('click',(e)=>{
+          const btn = e.target.closest('button[data-emoji]');
+          if(!btn) return;
+          const emoji = btn.dataset.emoji;
+          const pos = messageInput.selectionStart;
+          const val = messageInput.value;
+          messageInput.value = val.slice(0,pos)+emoji+val.slice(pos);
+          messageInput.focus();
+          messageInput.setSelectionRange(pos+emoji.length,pos+emoji.length);
+          emojiPicker.classList.remove('open');
+          refreshSendState();
+        });
+        document.addEventListener('click',()=>emojiPicker.classList.remove('open'));
+      }
+
+      /* ── TYPING INDICATOR ── */
+      const typingBar = document.getElementById('typingBar');
+      let typingTimer, lastTypingEmit = 0;
+      messageInput.addEventListener('input',()=>{
+        const now = Date.now();
+        if(now - lastTypingEmit > 2000){
+          lastTypingEmit = now;
+          socket.emit('typing_start',{ conversation_id: convoId });
+        }
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(()=>{ socket.emit('typing_stop',{ conversation_id: convoId }); }, 2500);
+      });
+      socket.on('user_typing',(data)=>{
+        if(!data || Number(data.conversation_id) !== convoId || Number(data.user_id) === currentUserId) return;
+        if(typingBar) typingBar.classList.add('show');
+      });
+      socket.on('user_stopped_typing',(data)=>{
+        if(!data || Number(data.conversation_id) !== convoId) return;
+        if(typingBar) typingBar.classList.remove('show');
+      });
+
+      /* ── AVATAR HELPER for dynamic messages ── */
+      const otherInitial = "{{ (other_username or '?')[:1] | upper }}";
+
+      window.addEventListener('beforeunload', ()=>{ try{ if(draftTimer) clearTimeout(draftTimer); socket.close(); }catch(_e){} });
+    })();
+  </script>
+</body>
+</html>

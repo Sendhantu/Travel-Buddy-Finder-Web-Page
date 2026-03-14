@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Create Account | Travel Buddy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f0ede8;
+      --bg2:#e6e1d9;
+      --surface:#fbfaf8;
+      --surface2:#f3efe9;
+      --border:rgba(0,0,0,.08);
+      --text:#1a1714;
+      --text2:#3f3a34;
+      --muted:#847d76;
+      --primary:#e8622a;
+      --primary-dark:#c44e1c;
+      --primary-soft:#fde8dc;
+      --ok:#2a7d4f;
+      --warn:#b45309;
+      --danger:#c0392b;
+      --radius-sm:10px;
+      --radius-md:14px;
+      --radius-lg:22px;
+      --radius-xl:30px;
+      --shadow-sm:0 3px 12px rgba(0,0,0,.08);
+      --shadow-lg:0 14px 34px rgba(0,0,0,.14);
+      --focus-ring:0 0 0 3px rgba(232,98,42,.28);
+      --transition:.2s cubic-bezier(.4,0,.2,1);
+    }
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      font-family:'DM Sans',sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(29,111,164,.13), transparent 30%),
+        radial-gradient(circle at 85% 85%, rgba(232,98,42,.16), transparent 35%),
+        linear-gradient(135deg,var(--bg),var(--bg2));
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:22px;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    a{text-decoration:none;color:inherit}
+    button,input{font-family:'DM Sans',sans-serif}
+    :focus-visible{outline:none;box-shadow:var(--focus-ring)}
+
+    .shell{
+      width:min(980px,100%);
+      display:grid;
+      grid-template-columns:1.1fr 1fr;
+      border:1px solid var(--border);
+      border-radius:var(--radius-xl);
+      overflow:hidden;
+      box-shadow:var(--shadow-lg);
+      background:var(--surface);
+      animation:fadeIn .3s ease;
+    }
+
+    @keyframes fadeIn{
+      from{opacity:0;transform:translateY(8px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    .hero{
+      position:relative;
+      background:
+        linear-gradient(165deg,#1d6fa4 0%, #234f78 38%, #163a59 100%);
+      color:#fff;
+      padding:38px 34px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:20px;
+      overflow:hidden;
+    }
+
+    .hero::after{
+      content:'';
+      position:absolute;
+      inset:auto -88px -88px auto;
+      width:240px;
+      height:240px;
+      border-radius:50%;
+      background:radial-gradient(circle,rgba(255,255,255,.24),transparent 70%);
+      pointer-events:none;
+    }
+
+    .brand{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      font-family:'Sora',sans-serif;
+      font-size:16px;
+      font-weight:800;
+      letter-spacing:-.2px;
+    }
+
+    .brand-badge{
+      width:34px;
+      height:34px;
+      border-radius:10px;
+      display:grid;
+      place-items:center;
+      background:rgba(255,255,255,.2);
+      border:1px solid rgba(255,255,255,.24);
+      font-size:18px;
+    }
+
+    .hero-copy h1{
+      font-family:'Sora',sans-serif;
+      font-size:32px;
+      font-weight:800;
+      line-height:1.12;
+      margin-bottom:10px;
+      max-width:14ch;
+    }
+
+    .hero-copy p{
+      color:rgba(255,255,255,.87);
+      font-size:14px;
+      max-width:38ch;
+    }
+
+    .hero-points{
+      list-style:none;
+      display:grid;
+      gap:10px;
+      font-size:13px;
+      color:rgba(255,255,255,.92);
+    }
+
+    .hero-points li{
+      display:flex;
+      align-items:flex-start;
+      gap:9px;
+    }
+
+    .hero-points li::before{
+      content:'✓';
+      margin-top:1px;
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:rgba(255,255,255,.2);
+      border:1px solid rgba(255,255,255,.28);
+      font-size:11px;
+      flex-shrink:0;
+    }
+
+    .panel{
+      padding:34px 30px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      background:var(--surface);
+    }
+
+    .title{
+      font-family:'Sora',sans-serif;
+      font-size:25px;
+      font-weight:800;
+      letter-spacing:-.3px;
+      margin-bottom:6px;
+    }
+
+    .subtitle{
+      color:var(--muted);
+      font-size:14px;
+      margin-bottom:20px;
+    }
+
+    .error{
+      margin-bottom:12px;
+      border:1px solid rgba(192,57,43,.25);
+      background:#fdecea;
+      color:var(--danger);
+      border-radius:11px;
+      padding:9px 11px;
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .field{margin-bottom:13px}
+
+    .field label{
+      display:block;
+      font-size:12px;
+      font-weight:700;
+      color:var(--text2);
+      margin-bottom:6px;
+      letter-spacing:.02em;
+    }
+
+    .input-wrap{position:relative}
+
+    .input-wrap input{
+      width:100%;
+      height:45px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:var(--surface2);
+      color:var(--text);
+      padding:0 12px;
+      font-size:14px;
+      transition:border-color var(--transition),box-shadow var(--transition),background var(--transition);
+    }
+
+    .input-wrap input:focus{
+      border-color:var(--primary);
+      background:#fff;
+      box-shadow:var(--focus-ring);
+    }
+
+    .row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .toggle{
+      height:42px;
+      padding:0 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:var(--surface2);
+      color:var(--text2);
+      font-size:12px;
+      font-weight:700;
+      cursor:pointer;
+      white-space:nowrap;
+      transition:all var(--transition);
+    }
+
+    .toggle:hover{background:var(--bg2)}
+
+    .meta{
+      margin-top:6px;
+      min-height:17px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+
+    .status.ok{color:var(--ok);font-weight:700}
+    .status.bad{color:var(--danger);font-weight:700}
+
+    /* ── STEP PROGRESS ── */
+    .steps{
+      display:flex;gap:0;align-items:center;margin-bottom:20px;
+    }
+    .step{
+      display:flex;align-items:center;gap:7px;flex:1;
+    }
+    .step-num{
+      width:26px;height:26px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:800;flex-shrink:0;
+      border:2px solid var(--border);background:var(--surface2);color:var(--muted);
+      transition:all .25s ease;
+    }
+    .step.done .step-num{background:var(--ok);border-color:var(--ok);color:#fff;}
+    .step.active .step-num{background:var(--primary);border-color:var(--primary);color:#fff;}
+    .step-label{font-size:11px;font-weight:700;color:var(--muted);transition:color .25s;}
+    .step.active .step-label{color:var(--primary);}
+    .step.done .step-label{color:var(--ok);}
+    .step-line{flex:1;height:2px;background:var(--border);border-radius:999px;margin:0 6px;transition:background .25s;}
+    .step.done + .step .step-line{background:var(--ok);}
+
+    /* ── AVATAR PREVIEW ── */
+    .avatar-preview{
+      width:54px;height:54px;border-radius:50%;margin-bottom:12px;
+      background:linear-gradient(135deg,var(--primary),#f5a623);
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:#fff;
+      border:3px solid var(--surface2);
+      transition:all .2s ease;
+      box-shadow:0 4px 14px rgba(232,98,42,.25);
+    }
+    .avatar-preview.empty{background:linear-gradient(135deg,#d1d5db,#9ca3af);box-shadow:none;}
+
+    .strength-track{
+      margin-top:6px;
+      height:6px;
+      border-radius:999px;
+      background:var(--surface2);
+      overflow:hidden;
+      border:1px solid var(--border);
+    }
+
+    .strength-fill{
+      height:100%;
+      width:0%;
+      border-radius:inherit;
+      transition:width var(--transition),background var(--transition);
+      background:#d1d5db;
+    }
+
+    .submit{
+      width:100%;
+      margin-top:6px;
+      border:1px solid var(--primary);
+      background:var(--primary);
+      color:#fff;
+      border-radius:12px;
+      height:46px;
+      font-size:14px;
+      font-weight:800;
+      letter-spacing:.01em;
+      cursor:pointer;
+      transition:all var(--transition);
+      box-shadow:0 8px 18px rgba(232,98,42,.28);
+    }
+
+    .submit:hover{background:var(--primary-dark)}
+    .submit:disabled{
+      opacity:.58;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
+
+    .foot{
+      margin-top:14px;
+      color:var(--muted);
+      font-size:13px;
+      text-align:center;
+    }
+
+    .foot a{
+      color:var(--primary);
+      font-weight:700;
+    }
+
+    .foot a:hover{text-decoration:underline}
+
+    @media (max-width:900px){
+      .shell{grid-template-columns:1fr}
+      .hero{padding:28px 24px; gap:16px}
+      .hero-copy h1{font-size:28px; max-width:none}
+      .hero-points{grid-template-columns:1fr 1fr}
+      .panel{padding:28px 24px}
+    }
+
+    @media (max-width:600px){
+      body{padding:12px}
+      .hero-points{grid-template-columns:1fr}
+      .title{font-size:22px}
+      .panel{padding:24px 18px}
+      .hero{padding:22px 18px}
+    }
+  </style>
+</head>
+<body>
+  <main class="shell" role="main" aria-labelledby="registerTitle">
+    <section class="hero" aria-hidden="true">
+      <div class="brand">
+        <span class="brand-badge">🌍</span>
+        <span>Travel Buddy</span>
+      </div>
+
+      <div class="hero-copy">
+        <h1>Start your next journey with better trip planning.</h1>
+        <p>Create your account to host trips, join travellers, and chat with hosts/admin support in one place.</p>
+      </div>
+
+      <ul class="hero-points">
+        <li>Discover and join trusted travel groups</li>
+        <li>Host trips and manage members faster</li>
+        <li>Direct chat for hosts, travellers, and support</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h1 class="title" id="registerTitle">Create Account</h1>
+      <p class="subtitle">Set up your Travel Buddy login in less than a minute.</p>
+
+      <!-- STEP PROGRESS -->
+      <div class="steps" aria-label="Registration steps">
+        <div class="step active" id="step1">
+          <div class="step-num" id="step1num">1</div>
+          <span class="step-label">Username</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" id="step2">
+          <div class="step-num" id="step2num">2</div>
+          <span class="step-label">Password</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" id="step3">
+          <div class="step-num" id="step3num">3</div>
+          <span class="step-label">Confirm</span>
+        </div>
+      </div>
+
+      <!-- AVATAR PREVIEW -->
+      <div id="avatarPreview" class="avatar-preview empty" aria-hidden="true">?</div>
+
+      {% if error %}
+      <div class="error" role="alert">{{ error }}</div>
+      {% endif %}
+      <div id="formError" class="error" role="alert" style="display:none"></div>
+
+      <form id="registerForm" method="post" action="{{ url_for('register') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="field">
+          <label for="username">Username</label>
+          <div class="input-wrap">
+            <input id="username" name="username" type="text" autocomplete="username" minlength="3" maxlength="30" placeholder="Choose a username" required>
+          </div>
+          <div class="meta">
+            <span>3-30 chars, letters/numbers/_</span>
+            <span id="usernameState" class="status"></span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="email">Email Address</label>
+          <div class="input-wrap">
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required>
+          </div>
+          <div class="meta">
+            <span>Used for account updates and announcements</span>
+            <span id="emailState" class="status"></span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="phone">Phone (Optional)</label>
+          <div class="input-wrap">
+            <input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="20" placeholder="+91 98765 43210">
+          </div>
+          <div class="meta">
+            <span>Used only when SMS alerts are enabled</span>
+            <span class="status"></span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="row">
+            <div class="input-wrap" style="flex:1;">
+              <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Create a strong password" required>
+            </div>
+            <button type="button" id="togglePwd" class="toggle" aria-label="Show password" aria-pressed="false">Show</button>
+          </div>
+
+          <div class="strength-track" aria-hidden="true">
+            <div class="strength-fill" id="strengthFill"></div>
+          </div>
+
+          <div class="meta">
+            <span id="strengthText">Strength: -</span>
+            <span id="lengthHint">Min 8 chars</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="confirmPassword">Confirm Password</label>
+          <div class="input-wrap">
+            <input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Re-enter your password" required>
+          </div>
+          <div class="meta">
+            <span>Must match password</span>
+            <span id="confirmState" class="status"></span>
+          </div>
+        </div>
+
+        <button id="submitBtn" type="submit" class="submit" disabled>Create Account</button>
+      </form>
+
+      <p class="foot">
+        Already have an account?
+        <a href="{{ url_for('login') }}">Login</a>
+      </p>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const form = document.getElementById('registerForm');
+      const username = document.getElementById('username');
+      const email = document.getElementById('email');
+      const phone = document.getElementById('phone');
+      const password = document.getElementById('password');
+      const confirmPassword = document.getElementById('confirmPassword');
+      const togglePwd = document.getElementById('togglePwd');
+      const submitBtn = document.getElementById('submitBtn');
+      const formError = document.getElementById('formError');
+
+      const usernameState = document.getElementById('usernameState');
+      const emailState = document.getElementById('emailState');
+      const confirmState = document.getElementById('confirmState');
+      const strengthFill = document.getElementById('strengthFill');
+      const strengthText = document.getElementById('strengthText');
+      const lengthHint = document.getElementById('lengthHint');
+
+      const usernameRe = /^[A-Za-z0-9_]{3,30}$/;
+      const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+      const phoneRe = /^[\d\s\+\-\(\)]{7,20}$/;
+      const avatarPreview = document.getElementById('avatarPreview');
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+      const step3 = document.getElementById('step3');
+
+      function updateAvatar(val){
+        if(!avatarPreview) return;
+        if(val && usernameRe.test(val)){
+          avatarPreview.textContent = val[0].toUpperCase();
+          avatarPreview.classList.remove('empty');
+        } else if(val){
+          avatarPreview.textContent = val[0].toUpperCase();
+          avatarPreview.classList.add('empty');
+        } else {
+          avatarPreview.textContent = '?';
+          avatarPreview.classList.add('empty');
+        }
+      }
+
+      function updateSteps(){
+        const unameOk = usernameRe.test(username.value.trim());
+        const emailOk = emailRe.test(email.value.trim());
+        const pwdOk = password.value.length >= 8;
+        const matchOk = confirmPassword.value.length > 0 && password.value === confirmPassword.value;
+        // Step 1
+        step1.classList.toggle('done', unameOk && emailOk);
+        step1.classList.toggle('active', !(unameOk && emailOk));
+        // Step 2
+        step2.classList.toggle('done', pwdOk);
+        step2.classList.toggle('active', (unameOk && emailOk) && !pwdOk);
+        // Step 3
+        step3.classList.toggle('done', matchOk);
+        step3.classList.toggle('active', pwdOk && !matchOk);
+      }
+
+      function passwordScore(value) {
+        let score = 0;
+        if (!value) return 0;
+        if (value.length >= 8) score += 1;
+        if (/[a-z]/.test(value) && /[A-Z]/.test(value)) score += 1;
+        if (/\d/.test(value)) score += 1;
+        if (/[^A-Za-z0-9]/.test(value)) score += 1;
+        if (value.length >= 12) score += 1;
+        return score;
+      }
+
+      function updateStrength(value) {
+        const score = passwordScore(value);
+        const pct = Math.round((score / 5) * 100);
+        strengthFill.style.width = pct + '%';
+
+        if (!value) {
+          strengthText.textContent = 'Strength: -';
+          strengthFill.style.background = '#d1d5db';
+          return;
+        }
+        if (score <= 1) {
+          strengthText.textContent = 'Strength: Very weak';
+          strengthFill.style.background = '#ef4444';
+        } else if (score === 2) {
+          strengthText.textContent = 'Strength: Weak';
+          strengthFill.style.background = '#f59e0b';
+        } else if (score === 3) {
+          strengthText.textContent = 'Strength: Good';
+          strengthFill.style.background = '#f59e0b';
+        } else {
+          strengthText.textContent = 'Strength: Strong';
+          strengthFill.style.background = '#16a34a';
+        }
+      }
+
+      function updateValidation() {
+        const uname = username.value.trim();
+        const emailVal = email.value.trim();
+        const phoneVal = phone.value.trim();
+        const pwd = password.value;
+        const cpwd = confirmPassword.value;
+
+        const unameOk = usernameRe.test(uname);
+        const emailOk = emailRe.test(emailVal);
+        const phoneOk = !phoneVal || phoneRe.test(phoneVal);
+        const pwdOk = pwd.length >= 8;
+        const matchOk = cpwd.length > 0 && pwd === cpwd;
+
+        if (!uname) {
+          usernameState.textContent = '';
+          usernameState.className = 'status';
+        } else if (unameOk) {
+          usernameState.textContent = 'Looks good';
+          usernameState.className = 'status ok';
+        } else {
+          usernameState.textContent = 'Invalid';
+          usernameState.className = 'status bad';
+        }
+
+        if (!emailVal) {
+          emailState.textContent = '';
+          emailState.className = 'status';
+        } else if (emailOk) {
+          emailState.textContent = 'Looks good';
+          emailState.className = 'status ok';
+        } else {
+          emailState.textContent = 'Invalid';
+          emailState.className = 'status bad';
+        }
+
+        if (!cpwd) {
+          confirmState.textContent = '';
+          confirmState.className = 'status';
+        } else if (matchOk) {
+          confirmState.textContent = 'Matched';
+          confirmState.className = 'status ok';
+        } else {
+          confirmState.textContent = 'Not matching';
+          confirmState.className = 'status bad';
+        }
+
+        lengthHint.textContent = pwd.length + '/8+ chars';
+        submitBtn.disabled = !(unameOk && emailOk && phoneOk && pwdOk && matchOk);
+      }
+
+      togglePwd.addEventListener('click', function () {
+        const hidden = password.type === 'password';
+        password.type = hidden ? 'text' : 'password';
+        confirmPassword.type = hidden ? 'text' : 'password';
+        this.textContent = hidden ? 'Hide' : 'Show';
+        this.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+        this.setAttribute('aria-label', hidden ? 'Hide password' : 'Show password');
+      });
+
+      username.addEventListener('input', ()=>{ updateValidation(); updateAvatar(username.value.trim()); updateSteps(); });
+      email.addEventListener('input', ()=>{ updateValidation(); updateSteps(); });
+      phone.addEventListener('input', updateValidation);
+      password.addEventListener('input', function (e) {
+        updateStrength(e.target.value);
+        updateValidation();
+        updateSteps();
+      });
+      confirmPassword.addEventListener('input', ()=>{ updateValidation(); updateSteps(); });
+
+      form.addEventListener('submit', function (e) {
+        formError.style.display = 'none';
+        formError.textContent = '';
+
+        const uname = username.value.trim();
+        const emailVal = email.value.trim();
+        const phoneVal = phone.value.trim();
+        const pwd = password.value;
+        const cpwd = confirmPassword.value;
+
+        if (!usernameRe.test(uname)) {
+          e.preventDefault();
+          formError.textContent = 'Use 3-30 characters with letters, numbers, or underscore.';
+          formError.style.display = 'block';
+          username.focus();
+          return;
+        }
+        if (!emailRe.test(emailVal)) {
+          e.preventDefault();
+          formError.textContent = 'Enter a valid email address.';
+          formError.style.display = 'block';
+          email.focus();
+          return;
+        }
+        if (phoneVal && !phoneRe.test(phoneVal)) {
+          e.preventDefault();
+          formError.textContent = 'Enter a valid phone number.';
+          formError.style.display = 'block';
+          phone.focus();
+          return;
+        }
+        if (pwd.length < 8) {
+          e.preventDefault();
+          formError.textContent = 'Password must be at least 8 characters.';
+          formError.style.display = 'block';
+          password.focus();
+          return;
+        }
+        if (pwd !== cpwd) {
+          e.preventDefault();
+          formError.textContent = 'Confirm password does not match.';
+          formError.style.display = 'block';
+          confirmPassword.focus();
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating account...';
+      });
+
+      updateStrength('');
+      updateValidation();
+      updateAvatar('');
+      updateSteps();
+    })();
+  </script>
+</body>
+</html>

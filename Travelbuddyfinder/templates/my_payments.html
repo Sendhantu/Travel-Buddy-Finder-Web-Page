@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>My Payments | Travel Buddy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f0ede8;
+      --surface: #faf9f7;
+      --surface2: #f2efe9;
+      --border: rgba(0,0,0,.08);
+      --text: #1a1714;
+      --muted: #8c8680;
+      --text2: #3d3a36;
+      --primary: #e8622a;
+      --primary-light: #fde8dc;
+      --primary-dark: #c44e1c;
+      --success: #2a7d4f;
+      --success-light: #d4f0e2;
+      --danger: #c0392b;
+      --danger-light: #fde8e6;
+      --warning: #b45309;
+      --warning-light: #fef3c7;
+      --info: #1d6fa4;
+      --info-light: #dbeafe;
+      --font-head: 'Sora', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,.06);
+      --shadow-md: 0 6px 20px rgba(0,0,0,.09);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,.12);
+      --shadow-card: 0 4px 16px rgba(0,0,0,.07);
+      --focus-ring: 0 0 0 3px rgba(232,98,42,.3);
+      --transition: .2s cubic-bezier(.4,0,.2,1);
+    }
+    :root[data-theme="dark"] {
+      --bg: #0e0d0b; --surface: #1c1a17; --surface2: #242118;
+      --border: rgba(255,255,255,.07); --muted: #7a7470; --text: #f0ede8; --text2: #c8c4be;
+      --primary: #f07540; --primary-light: rgba(240,117,64,.15); --primary-dark: #e8622a;
+      --success: #34d399; --success-light: rgba(52,211,153,.12);
+      --danger: #f87171; --danger-light: rgba(248,113,113,.12);
+      --warning: #fbbf24; --warning-light: rgba(251,191,36,.12);
+      --info: #60a5fa; --info-light: rgba(96,165,250,.12);
+      --shadow-card: 0 4px 16px rgba(0,0,0,.4);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.5; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+    :focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+
+    /* ── HEADER ── */
+    header {
+      height: 66px; background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+      position: sticky; top: 0; z-index: 40; box-shadow: var(--shadow-sm);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-logo { width: 36px; height: 36px; border-radius: 10px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .brand h1 { font-family: var(--font-head); font-size: 17px; font-weight: 800; }
+    .brand h1 span { color: var(--primary); }
+    .nav { display: flex; gap: 6px; align-items: center; }
+    .nav a { padding: 7px 13px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; color: var(--text2); transition: background var(--transition); }
+    .nav a:hover { background: var(--surface2); }
+    #themeToggle { width: 36px; height: 36px; border-radius: var(--radius-sm); background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    #themeToggle:hover { background: var(--bg); }
+
+    /* ── PAGE ── */
+    .page { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    /* ── HERO / SUMMARY ── */
+    .hero {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl);
+      padding: 28px 32px; margin-bottom: 24px; box-shadow: var(--shadow-card);
+      position: relative; overflow: hidden;
+      animation: fadeUp .35s ease both;
+    }
+    .hero::before {
+      content: ''; position: absolute; right: -60px; top: -60px; width: 240px; height: 240px; border-radius: 50%;
+      background: radial-gradient(circle, var(--primary-light) 0%, transparent 70%); pointer-events: none;
+    }
+    .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+    .hero-title { font-family: var(--font-head); font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .hero-title span { color: var(--primary); }
+    .hero-sub { font-size: 14px; color: var(--muted); }
+
+    /* ── STATS ROW ── */
+    .stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px;
+    }
+    .stat {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 20px 18px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 6px;
+      animation: fadeUp .35s ease both;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .stat:nth-child(1) { animation-delay: .05s; }
+    .stat:nth-child(2) { animation-delay: .10s; }
+    .stat:nth-child(3) { animation-delay: .15s; }
+    .stat:nth-child(4) { animation-delay: .20s; }
+    .stat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+    .stat-value { font-family: var(--font-head); font-size: 26px; font-weight: 800; line-height: 1; }
+    .stat-value.green { color: var(--success); }
+    .stat-value.orange { color: var(--warning); }
+    .stat-value.red { color: var(--danger); }
+    .stat-bar { height: 4px; border-radius: 999px; background: var(--surface2); overflow: hidden; margin-top: 4px; }
+    .stat-bar-fill { height: 100%; border-radius: 999px; transition: width .6s ease; }
+    .stat-bar-fill.green { background: linear-gradient(90deg, var(--success), #34d399); }
+    .stat-bar-fill.red { background: linear-gradient(90deg, var(--danger), #f87171); }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .search-wrap { flex: 1; min-width: 180px; position: relative; display: flex; align-items: center; }
+    .search-wrap .ico { position: absolute; left: 12px; color: var(--muted); font-size: 14px; pointer-events: none; }
+    .search-wrap input {
+      width: 100%; padding: 9px 12px 9px 36px; border-radius: var(--radius-md);
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+      font-family: var(--font-body); font-size: 13px;
+      transition: box-shadow var(--transition), border-color var(--transition);
+    }
+    .search-wrap input:focus { box-shadow: var(--focus-ring); border-color: var(--primary); outline: none; }
+    .search-wrap input::placeholder { color: var(--muted); }
+    .filter-select {
+      padding: 9px 12px; border-radius: var(--radius-md); border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    }
+    .filter-select:focus { outline: none; box-shadow: var(--focus-ring); }
+
+    /* ── PAYMENT CARDS ── */
+    .cards-grid { display: flex; flex-direction: column; gap: 14px; }
+
+    .pcard {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card); overflow: hidden;
+      animation: fadeUp .4s ease both;
+      transition: box-shadow var(--transition);
+      border-left: 4px solid transparent;
+    }
+    .pcard:hover { box-shadow: var(--shadow-md); }
+    .pcard.paid    { border-left-color: var(--success); }
+    .pcard.partial { border-left-color: var(--warning); }
+    .pcard.unpaid  { border-left-color: var(--danger); }
+
+    .pcard-header {
+      display: flex; align-items: center; gap: 14px; padding: 16px 20px;
+      border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .pcard-icon {
+      width: 46px; height: 46px; border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--primary), #f5a623);
+      display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+    }
+    .pcard-main { flex: 1; min-width: 0; }
+    .pcard-dest { font-family: var(--font-head); font-size: 16px; font-weight: 800; margin-bottom: 2px; }
+    .pcard-meta { font-size: 13px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
+    .pcard-meta span { display: flex; align-items: center; gap: 3px; }
+    .pcard-status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    }
+    .pcard-status-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .status-paid    { background: var(--success-light); color: var(--success); }
+    .status-partial { background: var(--warning-light); color: var(--warning); }
+    .status-unpaid  { background: var(--danger-light); color: var(--danger); }
+
+    .pcard-toggle { color: var(--muted); font-size: 16px; transition: transform var(--transition); }
+    .pcard.open .pcard-toggle { transform: rotate(180deg); }
+
+    .pcard-body { padding: 16px 20px; display: none; }
+    .pcard.open .pcard-body { display: block; }
+
+    .amounts-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    .amount-box {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 14px; text-align: center;
+    }
+    .amount-box .label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 6px; }
+    .amount-box .value { font-family: var(--font-head); font-size: 22px; font-weight: 800; }
+    .amount-box.paid .value { color: var(--success); }
+    .amount-box.remaining .value { color: var(--danger); }
+
+    .progress-section { margin-bottom: 16px; }
+    .progress-head { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .progress-track { height: 8px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 999px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+    .progress-fill.paid    { background: linear-gradient(90deg, var(--success), #34d399); }
+    .progress-fill.partial { background: linear-gradient(90deg, var(--warning), #fbbf24); }
+    .progress-fill.danger  { background: linear-gradient(90deg, var(--danger), #f87171); }
+
+    .pcard-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: var(--radius-sm);
+      font-family: var(--font-body); font-size: 13px; font-weight: 700;
+      border: 1px solid var(--border); transition: all var(--transition);
+    }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-ghost { background: var(--surface2); color: var(--text2); }
+    .btn-ghost:hover { background: var(--bg); color: var(--text); }
+
+    /* ── EMPTY ── */
+    .empty {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl);
+      padding: 72px 24px; text-align: center;
+    }
+    .empty-icon { font-size: 56px; display: block; margin-bottom: 16px; }
+    .empty h3 { font-family: var(--font-head); font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .empty p { color: var(--muted); font-size: 14px; }
+
+    /* ── SUMMARY TABLE (compact) ── */
+    .summary-wrap {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 24px;
+    }
+    .summary-head { padding: 14px 20px; border-bottom: 1px solid var(--border); font-family: var(--font-head); font-size: 15px; font-weight: 800; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 16px; font-size: 13px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: var(--surface2); font-weight: 800; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface2); }
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    }
+    .pill-paid    { background: var(--success-light); color: var(--success); }
+    .pill-partial { background: var(--warning-light); color: var(--warning); }
+    .pill-unpaid  { background: var(--danger-light); color: var(--danger); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 860px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .amounts-row { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      header { padding: 0 16px; }
+      .page { padding: 20px 16px 60px; }
+      .hero { padding: 20px; }
+      .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .amounts-row { grid-template-columns: 1fr; }
+      .pcard-header { padding: 12px 14px; }
+      .pcard-body { padding: 12px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">🌍</div>
+      <h1>Travel<span>Buddy</span></h1>
+    </div>
+    <nav class="nav">
+      <a href="{{ url_for('mainpage') }}">Home</a>
+      <a href="{{ url_for('messages_page') }}">Messages</a>
+      <a href="{{ url_for('logout') }}">Logout</a>
+    </nav>
+    <button id="themeToggle" title="Toggle theme">☀️</button>
+  </header>
+
+  <main class="page">
+
+    <!-- ── HERO ── -->
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <h2 class="hero-title">My <span>Payments</span> 💳</h2>
+          <p class="hero-sub">Track your trip payments and outstanding balances.</p>
+        </div>
+        <a href="{{ url_for('mainpage') }}" class="btn btn-ghost">← Back to Trips</a>
+      </div>
+    </div>
+
+    <!-- ── STATS ── -->
+    {% set total_due   = payments | sum(attribute='amount_due') if payments else 0 %}
+    {% set total_paid  = payments | sum(attribute='amount_paid') if payments else 0 %}
+    {% set total_rem   = payments | sum(attribute='remaining') if payments else 0 %}
+    {% set pct_paid    = ((total_paid / total_due) * 100) | int if total_due > 0 else 0 %}
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Total Trips</div>
+        <div class="stat-value">{{ (payments or []) | length }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Total Amount Due</div>
+        <div class="stat-value">₹{{ "{:,}".format(total_due | int) }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Total Paid</div>
+        <div class="stat-value green">₹{{ "{:,}".format(total_paid | int) }}</div>
+        <div class="stat-bar"><div class="stat-bar-fill green" style="width:{{ pct_paid }}%"></div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Outstanding</div>
+        <div class="stat-value {{ 'red' if total_rem > 0 else 'green' }}">₹{{ "{:,}".format(total_rem | int) }}</div>
+        <div class="stat-bar"><div class="stat-bar-fill red" style="width:{{ (100 - pct_paid) if total_due > 0 else 0 }}%"></div></div>
+      </div>
+    </div>
+
+    {% if payments %}
+
+    <!-- ── TOOLBAR ── -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="ico">🔍</span>
+        <input id="searchInput" type="search" placeholder="Search trips…" autocomplete="off">
+      </div>
+      <select class="filter-select" id="filterStatus">
+        <option value="all">All Statuses</option>
+        <option value="paid">Paid</option>
+        <option value="partial">Partial</option>
+        <option value="unpaid">Unpaid</option>
+      </select>
+    </div>
+
+    <!-- ── COMPACT TABLE ── -->
+    <div class="summary-wrap" style="margin-bottom: 24px;">
+      <div class="summary-head">Payment Summary</div>
+      <div style="overflow-x:auto;">
+        <table id="payTable">
+          <thead>
+            <tr>
+              <th>Trip</th>
+              <th>Amount Due</th>
+              <th>Paid</th>
+              <th>Remaining</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in payments %}
+            <tr data-dest="{{ p.destination | lower }}" data-status="{{ p.payment_status | lower }}">
+              <td><strong>{{ p.destination }}</strong><br><small style="color:var(--muted)">{{ p.travel_date or '' }}</small></td>
+              <td>₹ {{ p.amount_due }}</td>
+              <td style="color:var(--success);font-weight:700">₹ {{ p.amount_paid }}</td>
+              <td style="color:{{ 'var(--danger)' if p.remaining > 0 else 'var(--success)' }};font-weight:700">₹ {{ p.remaining }}</td>
+              <td>
+                <span class="pill pill-{{ p.payment_status | lower }}">
+                  {{ p.payment_status | capitalize }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── PAYMENT CARDS ── -->
+    <div class="cards-grid" id="cardsGrid">
+      {% set ICONS = ['🗼','🏔','🏖','🏯','🌋','🗺','🏕','🌄','🌅','🏝'] %}
+      {% for p in payments %}
+      {% set pct = ((p.amount_paid / p.amount_due) * 100) | int if p.amount_due > 0 else 0 %}
+      {% set st  = p.payment_status | lower %}
+      <div class="pcard {{ st }}" data-dest="{{ p.destination | lower }}" data-status="{{ st }}"
+           style="animation-delay:{{ loop.index0 * 0.06 }}s">
+        <div class="pcard-header" onclick="toggleCard(this)">
+          <div class="pcard-icon">{{ ICONS[loop.index0 % 10] }}</div>
+          <div class="pcard-main">
+            <div class="pcard-dest">📍 {{ p.destination }}</div>
+            <div class="pcard-meta">
+              {% if p.travel_date %}<span>📅 {{ p.travel_date }}</span>{% endif %}
+              <span>💰 Due: ₹{{ p.amount_due }}</span>
+              <span>✅ Paid: ₹{{ p.amount_paid }}</span>
+              {% if p.remaining > 0 %}<span style="color:var(--danger)">⏳ Left: ₹{{ p.remaining }}</span>{% endif %}
+              {% if p.join_status %}<span style="color:var(--muted)">• {{ p.join_status | capitalize }}</span>{% endif %}
+            </div>
+          </div>
+          <span class="pcard-status-badge status-{{ st }}">
+            <span class="dot"></span>
+            {{ p.payment_status | capitalize }}
+          </span>
+          <span class="pcard-toggle">▼</span>
+        </div>
+        <div class="pcard-body">
+          <div class="amounts-row">
+            <div class="amount-box">
+              <div class="label">Amount Due</div>
+              <div class="value">₹{{ p.amount_due }}</div>
+            </div>
+            <div class="amount-box paid">
+              <div class="label">Paid</div>
+              <div class="value">₹{{ p.amount_paid }}</div>
+            </div>
+            <div class="amount-box remaining">
+              <div class="label">Remaining</div>
+              <div class="value">₹{{ p.remaining }}</div>
+            </div>
+          </div>
+          <div class="progress-section">
+            <div class="progress-head">
+              <span>Payment Progress</span>
+              <span>{{ pct }}% paid</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill {{ 'paid' if pct == 100 else ('partial' if pct > 0 else 'danger') }}"
+                   style="width:{{ pct }}%"></div>
+            </div>
+          </div>
+          <div class="pcard-actions">
+            {% if p.remaining > 0 %}
+            <button class="btn btn-primary" onclick="event.stopPropagation()">💳 Pay Now</button>
+            {% endif %}
+            <a href="{{ url_for('trip_detail', post_id=p.post_id) if p.post_id else '#' }}"
+               class="btn btn-ghost" onclick="event.stopPropagation()">View Trip →</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <p id="noResults" style="display:none; text-align:center; padding:40px; color:var(--muted); font-weight:600;">
+      😕 No payments match your search.
+    </p>
+
+    {% else %}
+    <div class="empty">
+      <span class="empty-icon">💳</span>
+      <h3>No payment records yet</h3>
+      <p>Join a trip to start tracking your payments here.</p>
+    </div>
+    {% endif %}
+
+  </main>
+
+  <script>
+  (function(){
+    /* ── THEME ── */
+    const root = document.documentElement;
+    const tBtn = document.getElementById('themeToggle');
+    const THEMES = ['default','dark'];
+    let current = localStorage.getItem('tb_theme') || 'default';
+    function applyTheme(t){
+      current = t;
+      t === 'default' ? root.removeAttribute('data-theme') : root.setAttribute('data-theme', t);
+      if(tBtn) tBtn.textContent = t === 'dark' ? '🌙' : '☀️';
+      localStorage.setItem('tb_theme', t);
+    }
+    applyTheme(current);
+    tBtn?.addEventListener('click', ()=> applyTheme(THEMES[(THEMES.indexOf(current)+1)%THEMES.length]));
+
+    /* ── CARD TOGGLE ── */
+    window.toggleCard = function(header){
+      const card = header.closest('.pcard');
+      card.classList.toggle('open');
+    };
+
+    /* ── FILTER + SEARCH ── */
+    const searchInput = document.getElementById('searchInput');
+    const filterStatus = document.getElementById('filterStatus');
+    const cardsGrid = document.getElementById('cardsGrid');
+    const payTable = document.getElementById('payTable');
+    const noResults = document.getElementById('noResults');
+
+    function applyFilter(){
+      const q = (searchInput?.value || '').toLowerCase().trim();
+      const st = filterStatus?.value || 'all';
+      let visible = 0;
+
+      cardsGrid?.querySelectorAll('.pcard').forEach(card => {
+        const dest = card.dataset.dest || '';
+        const status = card.dataset.status || '';
+        const show = (!q || dest.includes(q)) && (st === 'all' || status === st);
+        card.style.display = show ? '' : 'none';
+        if(show) visible++;
+      });
+
+      payTable?.querySelectorAll('tbody tr').forEach(row => {
+        const dest = row.dataset.dest || '';
+        const status = row.dataset.status || '';
+        const show = (!q || dest.includes(q)) && (st === 'all' || status === st);
+        row.style.display = show ? '' : 'none';
+      });
+
+      if(noResults) noResults.style.display = visible === 0 ? '' : 'none';
+    }
+
+    searchInput?.addEventListener('input', applyFilter);
+    filterStatus?.addEventListener('change', applyFilter);
+
+    /* ── ANIMATE STAT BARS ON LOAD ── */
+    setTimeout(()=>{
+      document.querySelectorAll('.stat-bar-fill').forEach(el => {
+        const target = el.style.width;
+        el.style.width = '0';
+        requestAnimationFrame(()=> requestAnimationFrame(()=> el.style.width = target));
+      });
+    }, 100);
+  })();
+  </script>
+</body>
+</html>

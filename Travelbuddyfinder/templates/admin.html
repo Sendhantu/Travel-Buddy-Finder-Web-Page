@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin Dashboard | Travel Buddy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ─── TOKENS ─── */
+    :root {
+      --bg:            #f0ede8;
+      --bg2:           #e8e4de;
+      --surface:       #faf9f7;
+      --surface2:      #f2efe9;
+      --border:        rgba(0,0,0,0.07);
+      --muted:         #8c8680;
+      --text:          #1a1714;
+      --text2:         #3d3a36;
+      --primary:       #e8622a;
+      --primary-light: #fde8dc;
+      --primary-dark:  #c44e1c;
+      --success:       #2a7d4f;
+      --success-light: #d4f0e2;
+      --danger:        #c0392b;
+      --danger-light:  #fde8e6;
+      --warning:       #b45309;
+      --warning-light: #fef3c7;
+      --info:          #1d6fa4;
+      --info-light:    #dbeafe;
+      --font-head: 'Sora', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --shadow-sm:   0 2px 8px rgba(0,0,0,0.06);
+      --shadow-md:   0 6px 20px rgba(0,0,0,0.09);
+      --shadow-lg:   0 12px 32px rgba(0,0,0,0.12);
+      --shadow-card: 0 4px 16px rgba(0,0,0,0.07);
+      --focus-ring:  0 0 0 3px rgba(232,98,42,0.3);
+      --transition:  .2s cubic-bezier(.4,0,.2,1);
+    }
+    :root[data-theme="dark"] {
+      --bg:#0e0d0b; --bg2:#161410; --surface:#1c1a17; --surface2:#242118;
+      --border:rgba(255,255,255,0.07); --muted:#7a7470; --text:#f0ede8; --text2:#c8c4be;
+      --primary:#f07540; --primary-light:rgba(240,117,64,0.15); --primary-dark:#e8622a;
+      --success:#34d399; --success-light:rgba(52,211,153,0.12);
+      --danger:#f87171;  --danger-light:rgba(248,113,113,0.12);
+      --warning:#fbbf24; --warning-light:rgba(251,191,36,0.12);
+      --info:#60a5fa;    --info-light:rgba(96,165,250,0.12);
+      --shadow-sm:0 2px 8px rgba(0,0,0,0.4); --shadow-md:0 6px 20px rgba(0,0,0,0.5);
+      --shadow-lg:0 12px 32px rgba(0,0,0,0.6); --shadow-card:0 4px 16px rgba(0,0,0,0.4);
+    }
+    :root[data-theme="high-contrast"] {
+      --bg:#000; --bg2:#000; --surface:#000; --surface2:#111;
+      --border:rgba(255,255,255,0.3); --muted:#aaa; --text:#fff; --text2:#ddd;
+      --primary:#ff0; --primary-light:#222200; --primary-dark:#ffd400;
+      --success:#0f0; --success-light:#002200; --danger:#f00; --danger-light:#220000;
+      --warning:#f90; --warning-light:#221100; --info:#0ff; --info-light:#002222;
+      --shadow-sm:none; --shadow-md:none; --shadow-lg:none; --shadow-card:none;
+      --focus-ring:0 0 0 3px #fff;
+    }
+
+    /* ─── RESET ─── */
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html, body { height:100%; }
+    body { font-family:var(--font-body); background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; line-height:1.5; }
+    a { color:inherit; text-decoration:none; }
+    button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
+    :focus-visible { outline:none; box-shadow:var(--focus-ring); border-radius:var(--radius-sm); }
+
+    /* ─── SKIP LINK ─── */
+    .skip-link { position:fixed; top:-100px; left:16px; z-index:999; background:var(--primary); color:#fff; padding:10px 18px; border-radius:var(--radius-md); font-weight:700; transition:top .2s; }
+    .skip-link:focus { top:16px; }
+
+    /* ─── TOAST ─── */
+    #toast-container { position:fixed; bottom:28px; right:28px; z-index:900; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+    .toast { background:var(--surface); color:var(--text); padding:12px 18px; border-radius:var(--radius-md); box-shadow:var(--shadow-lg); font-weight:600; font-size:14px; display:flex; align-items:center; gap:10px; animation:toastIn .3s ease forwards; pointer-events:auto; border-left:4px solid var(--primary); font-family:var(--font-body); }
+    .toast.success { border-color:var(--success); }
+    .toast.danger  { border-color:var(--danger); }
+    .toast.warning { border-color:var(--warning); }
+    @keyframes toastIn  { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes toastOut { from{opacity:1;} to{opacity:0;transform:translateY(12px);} }
+
+    /* ─── CONFIRM DIALOG ─── */
+    .confirm-overlay { position:fixed; inset:0; z-index:800; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; animation:fadeIn .2s ease; }
+    .confirm-overlay.hidden { display:none; }
+    .confirm-box { background:var(--surface); border-radius:var(--radius-xl); padding:32px 28px; max-width:420px; width:90%; box-shadow:var(--shadow-lg); text-align:center; }
+    .confirm-box .cicon { font-size:42px; margin-bottom:12px; display:block; }
+    .confirm-box h3 { font-family:var(--font-head); font-size:19px; font-weight:800; margin-bottom:8px; }
+    .confirm-box p  { font-size:14px; color:var(--muted); margin-bottom:24px; }
+    .confirm-btns { display:flex; gap:12px; justify-content:center; }
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+    /* ─── HEADER ─── */
+    header.header { background:var(--surface); height:66px; padding:0 28px; display:flex; justify-content:space-between; align-items:center; gap:16px; box-shadow:var(--shadow-sm); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:40; }
+    .header-left { display:flex; align-items:center; gap:12px; }
+    .brand-logo { width:36px; height:36px; border-radius:10px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:18px; }
+    .brand-name { font-family:var(--font-head); font-size:17px; font-weight:800; }
+    .brand-name span { color:var(--primary); }
+    .admin-chip { background:var(--danger-light); color:var(--danger); font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; border:1px solid rgba(192,57,43,.2); }
+    nav.nav-links { display:flex; align-items:center; gap:4px; }
+    .nav-links a { padding:7px 13px; border-radius:var(--radius-sm); font-size:13.5px; font-weight:600; color:var(--text2); transition:background var(--transition),color var(--transition); }
+    .nav-links a:hover { background:var(--surface2); color:var(--text); }
+    .nav-links a.active { background:var(--primary-light); color:var(--primary); }
+    .nav-links a.logout { color:var(--danger); }
+    .nav-links a.logout:hover { background:var(--danger-light); }
+    #themeToggle { width:38px; height:38px; border-radius:var(--radius-sm); background:var(--surface2); color:var(--text); display:flex; align-items:center; justify-content:center; font-size:17px; border:1px solid var(--border); transition:background var(--transition); }
+    #themeToggle:hover { background:var(--bg2); }
+
+    /* ─── PAGE ─── */
+    .page { max-width:1300px; margin:0 auto; padding:32px 24px 80px; }
+
+    /* ─── HERO ─── */
+    .admin-hero { background:var(--surface); border-radius:var(--radius-xl); padding:28px 32px; display:flex; align-items:center; justify-content:space-between; gap:20px; box-shadow:var(--shadow-card); border:1px solid var(--border); margin-bottom:28px; position:relative; overflow:hidden; }
+    .admin-hero::before { content:''; position:absolute; right:-40px; top:-40px; width:200px; height:200px; border-radius:50%; background:radial-gradient(circle,var(--primary-light) 0%,transparent 70%); pointer-events:none; }
+    .admin-hero h1 { font-family:var(--font-head); font-size:22px; font-weight:800; margin-bottom:4px; }
+    .admin-hero h1 span { color:var(--primary); }
+    .admin-hero p { font-size:14px; color:var(--muted); }
+    .hero-date { font-size:13px; font-weight:600; color:var(--muted); background:var(--surface2); padding:6px 16px; border-radius:999px; border:1px solid var(--border); white-space:nowrap; position:relative; z-index:1; }
+
+    /* ─── STATS ─── */
+    .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:28px; }
+    .stat-card { background:var(--surface); border-radius:var(--radius-lg); padding:20px 22px; border:1px solid var(--border); box-shadow:var(--shadow-card); display:flex; align-items:center; gap:16px; transition:transform var(--transition),box-shadow var(--transition); animation:cardIn .35s ease both; }
+    .stat-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+    .stat-card:nth-child(1){animation-delay:.05s;} .stat-card:nth-child(2){animation-delay:.10s;} .stat-card:nth-child(3){animation-delay:.15s;}
+    .stat-icon { width:46px; height:46px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+    .stat-icon.users   { background:var(--info-light); }
+    .stat-icon.trips   { background:var(--primary-light); }
+    .stat-icon.members { background:var(--success-light); }
+    .stat-card h4 { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:3px; }
+    .stat-card .num { font-family:var(--font-head); font-size:28px; font-weight:800; line-height:1; }
+    @keyframes cardIn { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+
+    /* ─── SECTION ─── */
+    .section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+    .section-head-left { display:flex; align-items:center; gap:10px; }
+    .section-head h2 { font-family:var(--font-head); font-size:17px; font-weight:800; }
+    .pending-pill { background:var(--warning-light); color:var(--warning); font-size:12px; font-weight:700; padding:3px 12px; border-radius:999px; border:1px solid rgba(180,83,9,.2); }
+
+    /* ─── TABLE CARD ─── */
+    .table-card { background:var(--surface); border-radius:var(--radius-lg); border:1px solid var(--border); box-shadow:var(--shadow-card); overflow:hidden; margin-bottom:32px; animation:cardIn .4s ease both; }
+
+    /* ─── CONTROLS BAR ─── */
+    .controls-bar { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:var(--surface2); }
+    .search-wrap { flex:1; min-width:180px; position:relative; display:flex; align-items:center; }
+    .search-wrap .ico { position:absolute; left:12px; font-size:14px; color:var(--muted); pointer-events:none; }
+    .search-wrap input { width:100%; padding:8px 12px 8px 34px; border-radius:var(--radius-md); border:1px solid var(--border); background:var(--surface); color:var(--text); font-family:var(--font-body); font-size:13.5px; transition:box-shadow var(--transition),border-color var(--transition); }
+    .search-wrap input::placeholder { color:var(--muted); }
+    .search-wrap input:focus { box-shadow:var(--focus-ring); border-color:var(--primary); outline:none; }
+    .ctrl-select { padding:8px 12px; border-radius:var(--radius-md); border:1px solid var(--border); background:var(--surface); color:var(--text); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; }
+    .ctrl-select:focus { outline:none; box-shadow:var(--focus-ring); }
+    .ctrl-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:var(--radius-md); font-size:13px; font-weight:700; border:1px solid transparent; transition:all var(--transition); }
+    .ctrl-btn.approve { background:var(--success-light); color:var(--success); border-color:rgba(42,125,79,.15); }
+    .ctrl-btn.approve:hover { background:var(--success); color:#fff; }
+    .ctrl-btn.reject  { background:var(--danger-light);  color:var(--danger);  border-color:rgba(192,57,43,.15); }
+    .ctrl-btn.reject:hover  { background:var(--danger);  color:#fff; }
+    .ctrl-btn.ghost { background:var(--surface); color:var(--text2); border-color:var(--border); }
+    .ctrl-btn.ghost:hover { background:var(--bg2); color:var(--text); }
+    .ctrl-btn:disabled { opacity:.5; pointer-events:none; }
+    .ctrl-divider { width:1px; height:26px; background:var(--border); flex-shrink:0; }
+    .export-btn { display:inline-flex; align-items:center; gap:5px; padding:7px 13px; border-radius:var(--radius-sm); font-size:12px; font-weight:700; background:var(--surface); color:var(--text2); border:1px solid var(--border); transition:all var(--transition); cursor:pointer; }
+    .export-btn:hover { background:var(--bg2); color:var(--text); }
+
+    /* ─── TABLE ─── */
+    .table-scroll { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; min-width:820px; }
+    thead tr { background:linear-gradient(135deg,var(--primary),var(--primary-dark)); }
+    th { padding:12px 14px; font-family:var(--font-head); font-size:11px; font-weight:700; color:rgba(255,255,255,0.9); text-transform:uppercase; letter-spacing:.6px; text-align:left; white-space:nowrap; cursor:pointer; user-select:none; transition:background var(--transition); }
+    th:hover { background:rgba(255,255,255,0.1); }
+    th.no-sort { cursor:default; }
+    th.no-sort:hover { background:transparent; }
+    .sort-icon { margin-left:4px; opacity:.5; font-size:10px; }
+    th.sorted-asc  .sort-icon::after { content:'▲'; opacity:1; }
+    th.sorted-desc .sort-icon::after { content:'▼'; opacity:1; }
+    th:not(.sorted-asc):not(.sorted-desc) .sort-icon::after { content:'⇅'; }
+    tbody tr { border-bottom:1px solid var(--border); transition:background var(--transition),border-left var(--transition); border-left:3px solid transparent; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:var(--surface2); border-left-color:var(--primary); }
+    tbody tr.selected { background:var(--primary-light); border-left-color:var(--primary); }
+    td { padding:12px 14px; font-size:13.5px; color:var(--text2); vertical-align:middle; }
+    td strong { color:var(--text); font-weight:600; }
+
+    /* Avatar */
+    .avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--primary),#f5a623); display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-size:12px; font-weight:800; color:#fff; flex-shrink:0; }
+    .user-cell { display:flex; align-items:center; gap:9px; }
+    .user-name { font-weight:600; color:var(--text); }
+
+    /* Badges */
+    .badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap; }
+    .badge .dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+    .badge.pending  { background:var(--warning-light); color:var(--warning); }
+    .badge.approved { background:var(--success-light); color:var(--success); }
+    .badge.rejected { background:var(--danger-light);  color:var(--danger); }
+
+    /* ID Proof link */
+    .proof-link { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:700; color:var(--info); background:var(--info-light); padding:4px 10px; border-radius:999px; border:1px solid rgba(29,111,164,.15); transition:all var(--transition); }
+    .proof-link:hover { background:var(--info); color:#fff; }
+
+    /* Row actions */
+    .row-actions { display:flex; gap:6px; align-items:center; }
+    .btn-act { display:inline-flex; align-items:center; gap:4px; padding:5px 11px; border-radius:var(--radius-sm); font-size:12px; font-weight:700; border:1px solid transparent; transition:all var(--transition); }
+    .btn-act.approve { background:var(--success-light); color:var(--success); border-color:rgba(42,125,79,.15); }
+    .btn-act.approve:hover { background:var(--success); color:#fff; }
+    .btn-act.reject  { background:var(--danger-light);  color:var(--danger);  border-color:rgba(192,57,43,.15); }
+    .btn-act.reject:hover  { background:var(--danger);  color:#fff; }
+    .btn-act:disabled { opacity:.5; pointer-events:none; }
+    .btn-act.loading { opacity:.6; pointer-events:none; }
+
+    input[type="checkbox"] { width:15px; height:15px; accent-color:var(--primary); cursor:pointer; }
+
+    /* Users snapshot */
+    .tag {
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    .tag.admin { background:var(--danger-light); color:var(--danger); }
+    .tag.user  { background:var(--info-light); color:var(--info); }
+    .tag.host  { background:var(--primary-light); color:var(--primary); }
+    .tag.traveler { background:var(--success-light); color:var(--success); }
+    .state-chip {
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    .state-chip.active { background:var(--success-light); color:var(--success); }
+    .state-chip.disabled { background:var(--danger-light); color:var(--danger); }
+    .state-chip .dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+    .users-link-btn {
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding:8px 14px;
+      border-radius:var(--radius-md);
+      border:1px solid var(--border);
+      background:var(--surface);
+      color:var(--text2);
+      font-size:13px;
+      font-weight:700;
+      transition:all var(--transition);
+    }
+    .users-link-btn:hover { background:var(--surface2); color:var(--text); }
+    .muted-cell { color:var(--muted); font-weight:600; font-size:12.5px; }
+
+    /* Empty */
+    .empty-row td { text-align:center; padding:56px 24px; }
+    .empty-icon { font-size:44px; display:block; margin-bottom:12px; }
+    .empty-title { font-family:var(--font-head); font-size:16px; font-weight:800; margin-bottom:5px; }
+    .empty-sub   { font-size:13px; color:var(--muted); }
+
+    /* Table footer */
+    .table-footer { padding:11px 16px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .table-footer span { font-size:13px; color:var(--muted); font-weight:600; }
+    .pending-badge { color:var(--warning); }
+
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+    /* Responsive */
+    @media(max-width:900px) { .stats-row { grid-template-columns:repeat(3,1fr); } }
+    @media(max-width:640px) {
+      header.header { padding:0 16px; }
+      .page { padding:20px 16px 80px; }
+      .admin-hero { flex-direction:column; align-items:flex-start; padding:22px 20px; }
+      .stats-row { grid-template-columns:1fr 1fr 1fr; gap:10px; }
+      .stat-card { padding:14px; flex-direction:column; align-items:flex-start; gap:8px; }
+      .stat-card .num { font-size:22px; }
+      .nav-links .hide-mobile { display:none; }
+    }
+
+    @keyframes rowIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+    tbody tr { animation:rowIn .25s ease both; }
+    tbody tr:nth-child(1){animation-delay:.04s;} tbody tr:nth-child(2){animation-delay:.08s;}
+    tbody tr:nth-child(3){animation-delay:.12s;} tbody tr:nth-child(4){animation-delay:.16s;}
+    tbody tr:nth-child(5){animation-delay:.20s;} tbody tr:nth-child(6){animation-delay:.24s;}
+  </style>
+</head>
+<body>
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- CONFIRM DIALOG -->
+  <div class="confirm-overlay hidden" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="confirm-box">
+      <span class="cicon" id="confirmIcon">⚠️</span>
+      <h3 id="confirmTitle">Are you sure?</h3>
+      <p id="confirmMsg">This action cannot be undone.</p>
+      <div class="confirm-btns">
+        <button class="ctrl-btn ghost" id="confirmCancel">Cancel</button>
+        <button class="ctrl-btn" id="confirmOk">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="header" role="banner">
+    <div class="header-left">
+      <div class="brand-logo" aria-hidden="true">🌍</div>
+      <span class="brand-name">Travel<span>Buddy</span></span>
+      <span class="admin-chip">Admin</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <nav class="nav-links" aria-label="Admin navigation">
+        <a href="/admin/dashboard" class="active hide-mobile">Dashboard</a>
+        <a href="{{ url_for('admin_users') }}" class="hide-mobile">Users</a>
+        <a href="{{ url_for('admin_moderation') }}" class="hide-mobile">Moderation</a>
+        <a href="{{ url_for('admin_chat_analytics') }}" class="hide-mobile">Analytics</a>
+        <a href="{{ url_for('admin_audit_log') }}" class="hide-mobile">Audit</a>
+        <a href="{{ url_for('admin_messages') }}" class="hide-mobile">
+          Messages{% if admin_unread_count %} ({{ admin_unread_count }}){% endif %}
+        </a>
+        <a href="/logout" class="logout">Logout</a>
+      </nav>
+      <button id="themeToggle" aria-label="Toggle color theme">☀️</button>
+    </div>
+  </header>
+
+  <main id="mainContent" class="page" role="main">
+
+    <!-- HERO -->
+    <div class="admin-hero" role="region" aria-label="Admin welcome">
+      <div>
+        <h1>🛠 Admin <span>Dashboard</span></h1>
+        <p>Review verification requests and manage the platform.</p>
+      </div>
+      <div class="hero-date" id="heroDate" aria-live="polite"></div>
+    </div>
+
+    <!-- STATS -->
+    <section class="stats-row" aria-label="Platform statistics">
+      <div class="stat-card">
+        <div class="stat-icon users" aria-hidden="true">👤</div>
+        <div>
+          <h4>Total Users</h4>
+          <div class="num">{{ stats.users }}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon trips" aria-hidden="true">🗺️</div>
+        <div>
+          <h4>Total Trips</h4>
+          <div class="num">{{ stats.trips }}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon members" aria-hidden="true">👥</div>
+        <div>
+          <h4>Trip Members</h4>
+          <div class="num">{{ stats.members }}</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SYSTEM USERS -->
+    <section aria-labelledby="usersSnapshotHeading">
+      <div class="section-head">
+        <div class="section-head-left">
+          <h2 id="usersSnapshotHeading">👤 System Users</h2>
+          <span class="pending-pill">Last 12 by login activity</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <a href="{{ url_for('admin_messages') }}" class="users-link-btn">Open Messages</a>
+          <a href="{{ url_for('admin_users') }}" class="users-link-btn">Manage All Users</a>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-scroll">
+          <table role="table">
+            <thead>
+              <tr>
+                <th scope="col" class="no-sort">#</th>
+                <th scope="col" class="no-sort">User</th>
+                <th scope="col" class="no-sort">Role</th>
+                <th scope="col" class="no-sort">Account</th>
+                <th scope="col" class="no-sort">Last Login</th>
+                <th scope="col" class="no-sort">Last IP</th>
+                <th scope="col" class="no-sort">Logins (7d)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in recent_users %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar" aria-hidden="true">{{ (u.username or 'U')[0]|upper }}</div>
+                    <span class="user-name">{{ u.username }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="tag {{ u.role if u.role in ['admin','host','traveler'] else 'user' }}">
+                    {{ (u.role or 'user')|capitalize }}
+                  </span>
+                </td>
+                <td>
+                  <span class="state-chip {{ 'active' if u.is_active else 'disabled' }}">
+                    <span class="dot"></span>
+                    {{ 'Active' if u.is_active else 'Disabled' }}
+                  </span>
+                </td>
+                <td class="muted-cell">
+                  {% if u.last_login_at %}
+                  <time datetime="{{ u.last_login_at }}">{{ u.last_login_at }}</time>
+                  {% else %}
+                  Never
+                  {% endif %}
+                </td>
+                <td class="muted-cell">{{ u.last_ip or '—' }}</td>
+                <td><strong>{{ u.logins_7d }}</strong></td>
+              </tr>
+              {% endfor %}
+              {% if not recent_users %}
+              <tr class="empty-row"><td colspan="7">
+                <span class="empty-icon">👤</span>
+                <div class="empty-title">No users found</div>
+                <div class="empty-sub">User activity will appear here once users sign in.</div>
+              </td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOST VERIFICATION -->
+    <section aria-labelledby="hostsHeading">
+      <div class="section-head">
+        <div class="section-head-left">
+          <h2 id="hostsHeading">🏕 Host Verification</h2>
+          <span class="pending-pill" id="hostPendingPill">0 pending</span>
+        </div>
+        <button class="export-btn" data-export="hosts">⬇ Export CSV</button>
+      </div>
+
+      <div class="table-card">
+        <div class="controls-bar" role="region" aria-label="Host controls">
+          <div class="search-wrap">
+            <span class="ico" aria-hidden="true">🔍</span>
+            <label for="hostSearch" class="sr-only">Search hosts</label>
+            <input id="hostSearch" type="search" placeholder="Search username or name…" autocomplete="off">
+          </div>
+          <label for="hostFilter" class="sr-only">Filter by status</label>
+          <select id="hostFilter" class="ctrl-select">
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <div class="ctrl-divider" aria-hidden="true"></div>
+          <button class="ctrl-btn approve" id="hostBulkApprove">✔ Approve Selected</button>
+          <button class="ctrl-btn reject"  id="hostBulkReject">✖ Reject Selected</button>
+        </div>
+
+        <div class="table-scroll">
+          <table role="table">
+            <thead>
+              <tr>
+                <th class="no-sort" scope="col"><input type="checkbox" id="hostSelectAll" aria-label="Select all hosts"></th>
+                <th scope="col" data-col="index">#<span class="sort-icon"></span></th>
+                <th scope="col" data-col="username">Username<span class="sort-icon"></span></th>
+                <th scope="col" data-col="fullname">Full Name<span class="sort-icon"></span></th>
+                <th scope="col" data-col="phone">Phone<span class="sort-icon"></span></th>
+                <th class="no-sort" scope="col">ID Proof</th>
+                <th scope="col" data-col="status">Status<span class="sort-icon"></span></th>
+                <th class="no-sort" scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody id="hostsTbody">
+              {% for h in hosts %}
+              <tr data-id="{{ h.user_id }}"
+                  data-status="{{ h.verification_status }}"
+                  data-username="{{ h.username|lower }}"
+                  data-fullname="{{ h.full_name|lower }}">
+                <td><input type="checkbox" class="row-select" value="{{ h.user_id }}" aria-label="Select {{ h.username }}"></td>
+                <td>{{ loop.index }}</td>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar" aria-hidden="true">{{ h.username[0]|upper }}</div>
+                    <span class="user-name">{{ h.username }}</span>
+                  </div>
+                </td>
+                <td>{{ h.full_name }}</td>
+                <td>{{ h.phone }}</td>
+                <td><a href="{{ h.id_proof_url }}" target="_blank" rel="noopener" class="proof-link">🪪 View</a></td>
+                <td>
+                  <span class="badge {{ h.verification_status }}">
+                    <span class="dot"></span>{{ h.verification_status|capitalize }}
+                  </span>
+                </td>
+                <td>
+                  <div class="row-actions">
+                    {% if h.verification_status == 'pending' %}
+                      <form method="post" action="/admin/approve/host/{{ h.user_id }}" class="act-form" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn-act approve" data-action="approve" data-id="{{ h.user_id }}" aria-label="Approve {{ h.username }}">✔ Approve</button>
+                      </form>
+                      <form method="post" action="/admin/reject/host/{{ h.user_id }}" class="act-form" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn-act reject" data-action="reject" data-id="{{ h.user_id }}" aria-label="Reject {{ h.username }}">✖ Reject</button>
+                      </form>
+                    {% elif h.verification_status == 'approved' %}
+                      <span style="font-size:12px;color:var(--success);font-weight:700;">✔ Verified</span>
+                    {% else %}
+                      <span style="font-size:12px;color:var(--danger);font-weight:700;">✖ Rejected</span>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+              {% if not hosts %}
+              <tr class="empty-row"><td colspan="8">
+                <span class="empty-icon">🏕</span>
+                <div class="empty-title">No host requests</div>
+                <div class="empty-sub">No host verification requests yet.</div>
+              </td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span id="hostCountLabel">Showing 0 hosts</span>
+          <span id="hostSelectedLabel" class="pending-badge"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRAVELER VERIFICATION -->
+    <section aria-labelledby="travHeading">
+      <div class="section-head">
+        <div class="section-head-left">
+          <h2 id="travHeading">🧳 Traveler Verification</h2>
+          <span class="pending-pill" id="travPendingPill">0 pending</span>
+        </div>
+        <button class="export-btn" data-export="travelers">⬇ Export CSV</button>
+      </div>
+
+      <div class="table-card">
+        <div class="controls-bar" role="region" aria-label="Traveler controls">
+          <div class="search-wrap">
+            <span class="ico" aria-hidden="true">🔍</span>
+            <label for="travSearch" class="sr-only">Search travelers</label>
+            <input id="travSearch" type="search" placeholder="Search username or name…" autocomplete="off">
+          </div>
+          <label for="travFilter" class="sr-only">Filter by status</label>
+          <select id="travFilter" class="ctrl-select">
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <div class="ctrl-divider" aria-hidden="true"></div>
+          <button class="ctrl-btn approve" id="travBulkApprove">✔ Approve Selected</button>
+          <button class="ctrl-btn reject"  id="travBulkReject">✖ Reject Selected</button>
+        </div>
+
+        <div class="table-scroll">
+          <table role="table">
+            <thead>
+              <tr>
+                <th class="no-sort" scope="col"><input type="checkbox" id="travSelectAll" aria-label="Select all travelers"></th>
+                <th scope="col" data-col="index">#<span class="sort-icon"></span></th>
+                <th scope="col" data-col="username">Username<span class="sort-icon"></span></th>
+                <th scope="col" data-col="fullname">Full Name<span class="sort-icon"></span></th>
+                <th scope="col" data-col="phone">Phone<span class="sort-icon"></span></th>
+                <th class="no-sort" scope="col">ID Proof</th>
+                <th scope="col" data-col="status">Status<span class="sort-icon"></span></th>
+                <th class="no-sort" scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody id="travTbody">
+              {% for t in travelers %}
+              <tr data-id="{{ t.user_id }}"
+                  data-status="{{ t.verification_status }}"
+                  data-username="{{ t.username|lower }}"
+                  data-fullname="{{ t.full_name|lower }}">
+                <td><input type="checkbox" class="row-select" value="{{ t.user_id }}" aria-label="Select {{ t.username }}"></td>
+                <td>{{ loop.index }}</td>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar" aria-hidden="true">{{ t.username[0]|upper }}</div>
+                    <span class="user-name">{{ t.username }}</span>
+                  </div>
+                </td>
+                <td>{{ t.full_name }}</td>
+                <td>{{ t.phone }}</td>
+                <td><a href="{{ t.id_proof_url }}" target="_blank" rel="noopener" class="proof-link">🪪 View</a></td>
+                <td>
+                  <span class="badge {{ t.verification_status }}">
+                    <span class="dot"></span>{{ t.verification_status|capitalize }}
+                  </span>
+                </td>
+                <td>
+                  <div class="row-actions">
+                    {% if t.verification_status == 'pending' %}
+                      <form method="post" action="/admin/approve/traveler/{{ t.user_id }}" class="act-form" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn-act approve" data-action="approve" data-id="{{ t.user_id }}" aria-label="Approve {{ t.username }}">✔ Approve</button>
+                      </form>
+                      <form method="post" action="/admin/reject/traveler/{{ t.user_id }}" class="act-form" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn-act reject" data-action="reject" data-id="{{ t.user_id }}" aria-label="Reject {{ t.username }}">✖ Reject</button>
+                      </form>
+                    {% elif t.verification_status == 'approved' %}
+                      <span style="font-size:12px;color:var(--success);font-weight:700;">✔ Verified</span>
+                    {% else %}
+                      <span style="font-size:12px;color:var(--danger);font-weight:700;">✖ Rejected</span>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+              {% if not travelers %}
+              <tr class="empty-row"><td colspan="8">
+                <span class="empty-icon">🧳</span>
+                <div class="empty-title">No traveler requests</div>
+                <div class="empty-sub">No traveler verification requests yet.</div>
+              </td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span id="travCountLabel">Showing 0 travelers</span>
+          <span id="travSelectedLabel" class="pending-badge"></span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+  (function(){
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    /* ── THEME ── */
+    const root   = document.documentElement;
+    const tBtn   = document.getElementById('themeToggle');
+    const THEMES = ['default','dark','high-contrast'];
+    const ICONS  = { default:'☀️', dark:'🌙', 'high-contrast':'⚡' };
+    let current  = localStorage.getItem('tb_theme') || 'default';
+    function applyTheme(t){ current=t; t==='default'?root.removeAttribute('data-theme'):root.setAttribute('data-theme',t); if(tBtn)tBtn.textContent=ICONS[t]; localStorage.setItem('tb_theme',t); }
+    applyTheme(current);
+    if(tBtn) tBtn.addEventListener('click',()=>applyTheme(THEMES[(THEMES.indexOf(current)+1)%THEMES.length]));
+
+    /* ── DATE ── */
+    const heroDate = document.getElementById('heroDate');
+    if(heroDate) heroDate.textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+    /* ── TOAST ── */
+    function toast(msg,type='info',ms=3200){
+      const c=document.getElementById('toast-container'); if(!c)return;
+      const icons={info:'ℹ️',success:'✅',danger:'❌',warning:'⚠️'};
+      const el=document.createElement('div'); el.className=`toast ${type}`;
+      el.innerHTML=`<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+      c.appendChild(el);
+      setTimeout(()=>{ el.style.animation='toastOut .3s ease forwards'; setTimeout(()=>el.remove(),300); },ms);
+    }
+
+    /* ── CONFIRM DIALOG ── */
+    const overlay=document.getElementById('confirmOverlay');
+    const confirmOk=document.getElementById('confirmOk');
+    const confirmCancel=document.getElementById('confirmCancel');
+    let confirmCb=null;
+    function showConfirm({icon='⚠️',title='Are you sure?',msg='',okLabel='Confirm',okClass='reject'}){
+      return new Promise(resolve=>{
+        document.getElementById('confirmIcon').textContent=icon;
+        document.getElementById('confirmTitle').textContent=title;
+        document.getElementById('confirmMsg').textContent=msg;
+        confirmOk.textContent=okLabel; confirmOk.className=`ctrl-btn ${okClass}`;
+        overlay.classList.remove('hidden'); confirmCb=resolve;
+      });
+    }
+    confirmOk.addEventListener('click',()=>{ overlay.classList.add('hidden'); if(confirmCb)confirmCb(true); });
+    confirmCancel.addEventListener('click',()=>{ overlay.classList.add('hidden'); if(confirmCb)confirmCb(false); });
+    overlay.addEventListener('click',e=>{ if(e.target===overlay){ overlay.classList.add('hidden'); if(confirmCb)confirmCb(false); } });
+
+    /* ── REUSABLE TABLE CONTROLLER ── */
+    function wireTable({ tbodyId, searchId, filterId, selectAllId, bulkApproveId, bulkRejectId, pendingPillId, countLabelId, selectedLabelId, approveUrl, rejectUrl, bulkApproveUrl, bulkRejectUrl, entityLabel }){
+
+      const tbody         = document.getElementById(tbodyId);
+      const searchEl      = document.getElementById(searchId);
+      const filterEl      = document.getElementById(filterId);
+      const selectAllEl   = document.getElementById(selectAllId);
+      const bulkApproveBtn= document.getElementById(bulkApproveId);
+      const bulkRejectBtn = document.getElementById(bulkRejectId);
+      const pendingPill   = document.getElementById(pendingPillId);
+      const countLabel    = document.getElementById(countLabelId);
+      const selectedLabel = document.getElementById(selectedLabelId);
+
+      if(!tbody) return;
+
+      function allRows(){ return Array.from(tbody.querySelectorAll('tr:not(.empty-row)')); }
+      function visibleRows(){ return allRows().filter(r=>!r.hidden); }
+
+      /* ── UPDATE SUMMARY ── */
+      function updateSummary(){
+        const vis     = visibleRows();
+        const pending = allRows().filter(r=>r.dataset.status==='pending').length;
+        if(pendingPill) pendingPill.textContent = `${pending} pending`;
+        if(countLabel)  countLabel.textContent  = `Showing ${vis.length} of ${allRows().length} ${entityLabel}`;
+        const sel = Array.from(tbody.querySelectorAll('.row-select:checked')).length;
+        if(selectedLabel) selectedLabel.textContent = sel>0 ? `${sel} selected` : '';
+      }
+
+      /* ── FILTER + SEARCH ── */
+      function applyFilters(){
+        const q = searchEl ? searchEl.value.toLowerCase().trim() : '';
+        const s = filterEl ? filterEl.value : 'all';
+        allRows().forEach(r=>{
+          const un = r.dataset.username||'';
+          const fn = r.dataset.fullname||'';
+          const matchQ = !q || un.includes(q) || fn.includes(q);
+          const matchS = s==='all' || r.dataset.status===s;
+          r.hidden = !(matchQ && matchS);
+        });
+        updateSummary();
+      }
+      if(searchEl) searchEl.addEventListener('input', applyFilters);
+      if(filterEl) filterEl.addEventListener('change', applyFilters);
+
+      /* ── SORT ── */
+      let sortCol=null, sortDir=1;
+      tbody.closest('.table-card').querySelectorAll('th[data-col]').forEach(th=>{
+        th.addEventListener('click',()=>{
+          const col=th.dataset.col;
+          if(sortCol===col) sortDir*=-1; else { sortCol=col; sortDir=1; }
+          tbody.closest('.table-card').querySelectorAll('th[data-col]').forEach(t=>t.classList.remove('sorted-asc','sorted-desc'));
+          th.classList.add(sortDir===1?'sorted-asc':'sorted-desc');
+          allRows().sort((a,b)=>{
+            let av='',bv='';
+            if(col==='username'){ av=a.dataset.username; bv=b.dataset.username; }
+            if(col==='fullname'){ av=a.dataset.fullname; bv=b.dataset.fullname; }
+            if(col==='status'){   av=a.dataset.status;   bv=b.dataset.status; }
+            if(col==='phone'){ av=a.children[4]?.textContent.trim(); bv=b.children[4]?.textContent.trim(); }
+            if(col==='index'){ return (parseInt(a.children[1]?.textContent||0)-parseInt(b.children[1]?.textContent||0))*sortDir; }
+            return av.localeCompare(bv)*sortDir;
+          }).forEach(r=>tbody.appendChild(r));
+        });
+      });
+
+      /* ── SELECT ALL ── */
+      if(selectAllEl){
+        selectAllEl.addEventListener('change',()=>{
+          visibleRows().forEach(r=>{ const cb=r.querySelector('.row-select'); if(cb){ cb.checked=selectAllEl.checked; r.classList.toggle('selected',selectAllEl.checked); } });
+          updateSummary();
+        });
+      }
+      tbody.addEventListener('change',e=>{
+        if(e.target.classList.contains('row-select')){
+          e.target.closest('tr').classList.toggle('selected',e.target.checked);
+          const vis=visibleRows(); const all=vis.every(r=>r.querySelector('.row-select')?.checked);
+          if(selectAllEl) selectAllEl.checked=all&&vis.length>0;
+          updateSummary();
+        }
+      });
+
+      /* ── UPDATE ROW UI after action ── */
+      function updateRowStatus(row, status){
+        row.dataset.status = status;
+        const badge = row.querySelector('.badge');
+        if(badge){ badge.className=`badge ${status}`; badge.innerHTML=`<span class="dot"></span>${status.charAt(0).toUpperCase()+status.slice(1)}`; }
+        const actionCell = row.querySelector('td:last-child .row-actions');
+        if(actionCell){
+          actionCell.innerHTML = status==='approved'
+            ? '<span style="font-size:12px;color:var(--success);font-weight:700;">✔ Verified</span>'
+            : '<span style="font-size:12px;color:var(--danger);font-weight:700;">✖ Rejected</span>';
+        }
+        const cb = row.querySelector('.row-select'); if(cb) cb.checked=false;
+        row.classList.remove('selected');
+      }
+
+      /* ── INDIVIDUAL ACTIONS ── */
+      tbody.addEventListener('click', async e=>{
+        const btn = e.target.closest('button[data-action]'); if(!btn) return;
+        e.preventDefault();
+        const action = btn.dataset.action;
+        const id     = btn.dataset.id;
+        const name   = btn.closest('tr')?.dataset.username || 'this user';
+        const isApprove = action==='approve';
+
+        const ok = await showConfirm(isApprove
+          ? { icon:'✔', title:`Approve ${name}?`, msg:`They will be verified as a ${entityLabel.slice(0,-1)}.`, okLabel:'Yes, Approve', okClass:'approve' }
+          : { icon:'✖', title:`Reject ${name}?`,  msg:`Their verification will be declined.`,                 okLabel:'Yes, Reject',  okClass:'reject' }
+        );
+        if(!ok) return;
+
+        btn.classList.add('loading'); btn.textContent='…';
+        const url = isApprove ? approveUrl(id) : rejectUrl(id);
+
+        try {
+          const res = await fetch(url,{
+            method:'POST',
+            headers:{
+              'Content-Type':'application/json',
+              ...(csrfToken ? {'X-CSRF-Token': csrfToken} : {})
+            },
+            credentials:'same-origin',
+            body:JSON.stringify({id})
+          });
+          if(res.ok){
+            const row = tbody.querySelector(`tr[data-id="${id}"]`);
+            if(row) updateRowStatus(row, isApprove?'approved':'rejected');
+            toast(`${name} ${isApprove?'approved':'rejected'} successfully.`, isApprove?'success':'danger');
+            updateSummary();
+          } else {
+            const d = await res.json().catch(()=>null);
+            toast(d?.message||'Action failed. Please try again.','danger');
+            btn.classList.remove('loading'); btn.textContent=isApprove?'✔ Approve':'✖ Reject';
+          }
+        } catch(err){
+          /* Fallback: submit the form */
+          btn.closest('form')?.submit();
+        }
+      });
+
+      /* ── BULK ACTIONS ── */
+      async function handleBulk(action){
+        const isApprove = action==='approve';
+        const ids = Array.from(tbody.querySelectorAll('.row-select:checked')).map(cb=>cb.value);
+        if(!ids.length){ toast(`Select at least one ${entityLabel.slice(0,-1)}.`,'warning'); return; }
+
+        const ok = await showConfirm(isApprove
+          ? { icon:'✔', title:`Approve ${ids.length} ${entityLabel}?`, msg:'They will be verified.', okLabel:`Approve ${ids.length}`, okClass:'approve' }
+          : { icon:'✖', title:`Reject ${ids.length} ${entityLabel}?`,  msg:'Their requests will be declined.', okLabel:`Reject ${ids.length}`, okClass:'reject' }
+        );
+        if(!ok) return;
+
+        if(bulkApproveBtn) bulkApproveBtn.disabled=true;
+        if(bulkRejectBtn)  bulkRejectBtn.disabled=true;
+
+        try {
+          const url = isApprove ? bulkApproveUrl : bulkRejectUrl;
+          const res = await fetch(url,{
+            method:'POST',
+            headers:{
+              'Content-Type':'application/json',
+              ...(csrfToken ? {'X-CSRF-Token': csrfToken} : {})
+            },
+            credentials:'same-origin',
+            body:JSON.stringify({ids})
+          });
+          if(res.ok){
+            ids.forEach(id=>{ const row=tbody.querySelector(`tr[data-id="${id}"]`); if(row) updateRowStatus(row,isApprove?'approved':'rejected'); });
+            if(selectAllEl) selectAllEl.checked=false;
+            toast(`${ids.length} ${entityLabel} ${isApprove?'approved':'rejected'}.`, isApprove?'success':'danger');
+            updateSummary();
+          } else {
+            const d = await res.json().catch(()=>null);
+            toast(d?.message||'Bulk action failed.','danger');
+          }
+        } catch(err){ toast('Network error. Please try again.','danger'); }
+        finally {
+          if(bulkApproveBtn) bulkApproveBtn.disabled=false;
+          if(bulkRejectBtn)  bulkRejectBtn.disabled=false;
+        }
+      }
+
+      if(bulkApproveBtn) bulkApproveBtn.addEventListener('click',()=>handleBulk('approve'));
+      if(bulkRejectBtn)  bulkRejectBtn.addEventListener('click',()=>handleBulk('reject'));
+
+      /* ── INIT ── */
+      applyFilters();
+    }
+
+    /* ── WIRE HOSTS ── */
+    wireTable({
+      tbodyId:'hostsTbody', searchId:'hostSearch', filterId:'hostFilter',
+      selectAllId:'hostSelectAll', bulkApproveId:'hostBulkApprove', bulkRejectId:'hostBulkReject',
+      pendingPillId:'hostPendingPill', countLabelId:'hostCountLabel', selectedLabelId:'hostSelectedLabel',
+      approveUrl: id => `/api/admin/hosts/${encodeURIComponent(id)}/approve`,
+      rejectUrl:  id => `/api/admin/hosts/${encodeURIComponent(id)}/reject`,
+      bulkApproveUrl: '/api/admin/hosts/bulk-approve',
+      bulkRejectUrl:  '/api/admin/hosts/bulk-reject',
+      entityLabel: 'hosts'
+    });
+
+    /* ── WIRE TRAVELERS ── */
+    wireTable({
+      tbodyId:'travTbody', searchId:'travSearch', filterId:'travFilter',
+      selectAllId:'travSelectAll', bulkApproveId:'travBulkApprove', bulkRejectId:'travBulkReject',
+      pendingPillId:'travPendingPill', countLabelId:'travCountLabel', selectedLabelId:'travSelectedLabel',
+      approveUrl: id => `/api/admin/travelers/${encodeURIComponent(id)}/approve`,
+      rejectUrl:  id => `/api/admin/travelers/${encodeURIComponent(id)}/reject`,
+      bulkApproveUrl: '/api/admin/travelers/bulk-approve',
+      bulkRejectUrl:  '/api/admin/travelers/bulk-reject',
+      entityLabel: 'travelers'
+    });
+
+    /* ── EXPORT CSV ── */
+    document.querySelectorAll('.export-btn[data-export]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const type   = btn.dataset.export;
+        const tbodyId= type==='hosts' ? 'hostsTbody' : 'travTbody';
+        const tbody  = document.getElementById(tbodyId);
+        if(!tbody) return;
+        const rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row)')).filter(r=>!r.hidden);
+        if(!rows.length){ toast('No data to export.','warning'); return; }
+        const headers = ['#','Username','Full Name','Phone','Status'];
+        const csvRows = [headers.join(',')];
+        rows.forEach((r,i)=>{
+          const cols=[
+            i+1,
+            `"${r.dataset.username||''}"`,
+            `"${r.dataset.fullname||''}"`,
+            `"${r.children[4]?.textContent.trim()||''}"`,
+            r.dataset.status||''
+          ];
+          csvRows.push(cols.join(','));
+        });
+        const blob=new Blob([csvRows.join('\n')],{type:'text/csv'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a'); a.href=url; a.download=`${type}-${Date.now()}.csv`; a.click();
+        URL.revokeObjectURL(url);
+        toast('CSV exported!','success');
+      });
+    });
+
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Travel Buddy | Group Chat</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#eef1f7;--surface:#ffffff;--surface2:#f7f9fc;--border:rgba(17,24,39,.11);
+      --text:#111827;--muted:#6b7280;--primary:#2563eb;--primary-dark:#1d4ed8;--danger:#b42318;--ok:#2a7d4f;
+      --focus:0 0 0 3px rgba(37,99,235,.28);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'DM Sans',sans-serif;
+      color:var(--text);
+      background:radial-gradient(circle at 88% 6%, rgba(37,99,235,.12), transparent 30%), var(--bg);
+      min-height:100vh;
+      -webkit-font-smoothing:antialiased;
+      padding-bottom:74px;
+    }
+    a{text-decoration:none;color:inherit}
+    button,input,textarea,select{font-family:'DM Sans',sans-serif}
+    :focus-visible{outline:none;box-shadow:var(--focus)}
+
+    .topbar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(9px);border-bottom:1px solid var(--border);padding:10px 14px;display:grid;gap:8px}
+    .toprow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .left{display:flex;align-items:center;gap:10px;min-width:0}
+    .back{border:1px solid var(--border);background:var(--surface2);border-radius:999px;padding:7px 11px;font-size:12px;font-weight:700;white-space:nowrap}
+    .title{font-family:'Sora',sans-serif;font-size:17px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .right{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .btn{border:1px solid var(--border);background:var(--surface2);border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;color:#334155;cursor:pointer}
+    .btn.active{background:#dbeafe;color:#1d4ed8;border-color:rgba(37,99,235,.35)}
+    .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+    .conn{font-size:12px;color:var(--muted);font-weight:700;margin-left:auto}
+
+    .search-panel{display:none;border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:10px;grid-template-columns:1fr 140px 140px 130px auto;gap:8px;align-items:center}
+    .search-panel.open{display:grid}
+    .search-panel input,.search-panel select{border:1px solid var(--border);background:var(--surface2);border-radius:10px;padding:8px 10px;font-size:12px}
+
+    .wrap{max-width:1180px;margin:14px auto;padding:0 14px}
+    .shell{display:grid;grid-template-columns:280px 1fr;gap:12px;min-height:calc(100vh - 168px)}
+
+    .side{border:1px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden;display:flex;flex-direction:column}
+    .side-head{padding:12px;border-bottom:1px solid var(--border);background:var(--surface2)}
+    .side-head h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800;margin-bottom:4px}
+    .side-head p{font-size:12px;color:var(--muted)}
+    .members{padding:10px;display:grid;gap:7px;overflow:auto}
+    .member{border:1px solid var(--border);background:var(--surface2);border-radius:11px;padding:8px 9px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#334155}
+    .member.host{border-color:rgba(37,99,235,.35);background:#eff6ff;color:#1d4ed8}
+    .member .role{margin-left:auto;font-size:10px;font-weight:800;border:1px solid var(--border);border-radius:999px;padding:2px 7px;background:#fff;text-transform:uppercase;color:#64748b}
+    .member.host .role{border-color:rgba(37,99,235,.34);color:#1d4ed8}
+    .dm{font-size:10px;font-weight:800;border:1px solid rgba(37,99,235,.35);background:#fff;color:#1d4ed8;border-radius:999px;padding:2px 7px}
+
+    /* ── CIRCULAR MEMBER AVATARS ── */
+    .member-avatar{
+      width:30px;height:30px;border-radius:50%;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:800;color:#fff;
+      background:linear-gradient(135deg,#2563eb,#7c3aed);
+    }
+    .member.host .member-avatar{background:linear-gradient(135deg,#1d4ed8,#2563eb);}
+
+    /* ── CHAT MSG AVATAR ── */
+    .msg-avatar{
+      width:32px;height:32px;border-radius:50%;flex-shrink:0;margin-top:2px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:800;color:#fff;
+      background:linear-gradient(135deg,#2563eb,#7c3aed);
+    }
+    .msg.me .msg-avatar{background:linear-gradient(135deg,var(--primary),#f5a623);}
+    .msg{display:flex;gap:8px;align-items:flex-end;}
+    .msg.me{flex-direction:row-reverse;}
+
+    /* ── TYPING INDICATOR ── */
+    .typing-indicator{display:none;align-items:center;gap:8px;padding:4px 0;}
+    .typing-indicator.show{display:flex;}
+    .typing-dots{display:flex;gap:3px;align-items:center;}
+    .typing-dots span{
+      width:6px;height:6px;border-radius:50%;background:#94a3b8;
+      animation:typingBounce 1.2s ease-in-out infinite;
+    }
+    .typing-dots span:nth-child(2){animation-delay:.2s;}
+    .typing-dots span:nth-child(3){animation-delay:.4s;}
+    @keyframes typingBounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
+    .typing-label{font-size:12px;color:var(--muted);font-weight:600;}
+
+    /* ── EMOJI PICKER ── */
+    .emoji-picker{
+      position:absolute;bottom:calc(100% + 8px);left:0;z-index:50;
+      background:var(--surface);border:1px solid var(--border);border-radius:14px;
+      padding:10px;box-shadow:0 8px 28px rgba(0,0,0,.14);
+      display:none;flex-wrap:wrap;gap:4px;width:220px;
+    }
+    .emoji-picker.open{display:flex;}
+    .emoji-picker button{
+      border:none;background:none;font-size:18px;cursor:pointer;
+      padding:4px;border-radius:8px;transition:background .15s;
+      line-height:1;
+    }
+    .emoji-picker button:hover{background:var(--surface2);}
+    .emoji-wrap{position:relative;}
+
+    .main{border:1px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden;display:flex;flex-direction:column}
+    .history{padding:8px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;gap:8px}
+    .history button{border:1px solid var(--border);background:#fff;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:800;color:#334155;cursor:pointer}
+
+    .chat{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:9px;background:linear-gradient(180deg,#fbfdff 0%, #f4f7fb 100%)}
+    .chat::-webkit-scrollbar{width:7px}.chat::-webkit-scrollbar-thumb{background:#d3dce9;border-radius:999px}
+    .day{display:flex;justify-content:center}.day span{border:1px solid var(--border);background:#fff;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;color:var(--muted)}
+    .unread-divider{display:flex;align-items:center;gap:8px}.unread-divider:before,.unread-divider:after{content:'';height:1px;flex:1;background:rgba(37,99,235,.35)}
+    .unread-divider span{font-size:11px;font-weight:800;color:#1d4ed8;border:1px solid rgba(37,99,235,.33);background:#e0f2fe;border-radius:999px;padding:3px 8px}
+
+    /* msg flex handled in avatar section above */
+    .bubble{max-width:min(78%,680px);border:1px solid var(--border);background:#f2f4f8;border-radius:14px;padding:8px 10px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+    .msg.me .bubble{background:var(--primary);border-color:var(--primary);color:#fff}
+    .bubble.pending{opacity:.9}.bubble.failed{border-color:rgba(180,35,24,.45);box-shadow:0 0 0 2px rgba(180,35,24,.12)}.bubble.flagged{border-style:dashed;border-color:rgba(180,83,9,.4)}
+    .sender{font-size:11px;font-weight:800;color:#475569;margin-bottom:3px}.text{font-size:14px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+    .reply-box{font-size:11px;border:1px solid var(--border);background:#fff;border-radius:10px;padding:5px 7px;color:#5f584f;margin-bottom:6px}
+    .msg.me .reply-box{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.35);color:#fff}
+    .attachment{margin-top:6px}.attachment a{font-size:12px;font-weight:700;color:#1d4ed8;text-decoration:underline}.msg.me .attachment a{color:#fff}
+
+    .meta{margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+    .chip{font-size:10px;font-weight:800;border:1px solid var(--border);background:#fff;border-radius:999px;padding:2px 7px;color:var(--muted)}
+    .chip.warn{background:#fef3c7;border-color:rgba(180,83,9,.34);color:#8a4307}
+    .msg.me .chip{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.28);color:#fff}
+    .time{font-size:11px;color:var(--muted)}.msg.me .time{color:rgba(255,255,255,.84)}
+
+    .reactions{margin-top:6px;display:flex;gap:5px;flex-wrap:wrap}
+    .reaction{font-size:11px;font-weight:700;border:1px solid var(--border);background:#fff;border-radius:999px;padding:3px 7px;color:#334155}
+    .msg.me .reaction{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3);color:#fff}
+
+    .actions{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
+    .actions button{border:1px solid var(--border);background:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:800;cursor:pointer;color:#334155}
+    .actions button.danger{color:var(--danger);border-color:rgba(180,35,24,.33)}
+    .msg.me .actions button{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.32);color:#fff}
+
+    .composer{border-top:1px solid var(--border);padding:10px;background:var(--surface)}
+    .replying,.attach-preview{display:none;border:1px solid var(--border);background:var(--surface2);border-radius:10px;padding:6px 8px;font-size:12px;margin-bottom:7px;align-items:center;gap:8px}
+    .replying.show,.attach-preview.show{display:flex}
+    .replying .x,.attach-preview .x{margin-left:auto;border:1px solid var(--border);background:#fff;border-radius:999px;padding:2px 7px;font-size:10px;font-weight:800;cursor:pointer}
+
+    .compose-row{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:end}
+    .attach-btn{border:1px solid var(--border);background:var(--surface2);border-radius:12px;padding:10px;font-size:12px;font-weight:800;color:#334155;cursor:pointer;white-space:nowrap}
+    .msg-input{border:1px solid var(--border);background:var(--surface2);border-radius:12px;padding:10px 11px;min-height:44px;max-height:122px;resize:vertical;font-size:14px}
+    .send-btn{height:44px;border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:12px;padding:0 15px;font-size:13px;font-weight:800;cursor:pointer}
+    .send-btn:disabled{opacity:.55;cursor:not-allowed}
+    .aux{margin-top:7px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+    .aux input[type='datetime-local']{border:1px solid var(--border);background:var(--surface2);border-radius:10px;padding:7px 9px;font-size:12px}
+    .feedback{min-height:16px;margin-top:5px;font-size:12px;font-weight:600;color:var(--muted)}
+    .feedback.error{color:var(--danger)}.feedback.info{color:var(--ok)}
+
+    .jump{position:fixed;right:18px;bottom:88px;z-index:16;border:1px solid rgba(37,99,235,.35);background:#e0f2fe;color:#1d4ed8;border-radius:999px;padding:8px 12px;font-size:11px;font-weight:800;display:none;cursor:pointer}
+
+    .bottom-nav{position:fixed;left:12px;right:12px;bottom:10px;z-index:25;border:1px solid var(--border);background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-radius:999px;display:none;align-items:center;justify-content:space-around;padding:8px;box-shadow:0 10px 24px rgba(0,0,0,.12)}
+    .bottom-nav a{font-size:12px;font-weight:700;color:#334155;padding:6px 10px;border-radius:999px}
+    .bottom-nav a.active{background:#dbeafe;color:#1d4ed8}
+
+    @media(max-width:980px){.shell{grid-template-columns:1fr}.side{max-height:220px}}
+    @media(max-width:760px){
+      .search-panel{grid-template-columns:1fr 1fr}
+      .bubble{max-width:88%}
+      .compose-row{grid-template-columns:1fr}
+      .send-btn{height:40px}
+      .bottom-nav{display:flex}
+      .jump{right:12px;bottom:84px}
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="toprow">
+      <div class="left">
+        <a class="back" href="{{ url_for('messages_page') }}">← Inbox</a>
+        <div class="title">Trip Group Chat</div>
+      </div>
+      <div class="right">
+        <button id="pinBtn" class="btn {{ 'active' if conversation_pinned else '' }}">📌 Pin</button>
+        <button id="archiveBtn" class="btn {{ 'active' if conversation_archived else '' }}">🗂 Archive</button>
+        <button id="muteBtn" class="btn {{ 'active' if conversation_muted_until else '' }}">🔕 Mute 1h</button>
+        {% if can_broadcast %}<button id="broadcastBtn" class="btn primary">📣 Broadcast</button>{% endif %}
+      </div>
+    </div>
+    <div class="toprow" style="justify-content:flex-start">
+      <button id="toggleSearch" class="btn">Search</button>
+      <a class="btn" href="/api/chat/group/{{ post_id }}/export?format=csv">Export CSV</a>
+      <a class="btn" href="/api/chat/group/{{ post_id }}/export?format=pdf">Export PDF</a>
+      <button id="jumpUnreadBtn" class="btn">Jump to unread</button>
+      <a class="btn" href="{{ url_for('notifications_page') }}">🔔 {{ unread_notifications or 0 }}</a>
+      <span id="connStatus" class="conn">Connecting...</span>
+    </div>
+    <div id="searchPanel" class="search-panel">
+      <input id="searchQ" type="search" placeholder="Keyword...">
+      <input id="dateFrom" type="date">
+      <input id="dateTo" type="date">
+      <select id="senderFilter">
+        <option value="">Any sender</option>
+        <option value="{{ session['user_id'] }}">Me</option>
+        {% for m in members %}
+          {% if m.user_id != session['user_id'] %}
+            <option value="{{ m.user_id }}">{{ m.username }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+      <button id="applySearch" class="btn primary">Apply</button>
+      <button id="clearSearch" class="btn">Clear</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="shell">
+      <aside class="side" aria-label="Trip members">
+        <div class="side-head"><h2>Trip Members</h2><p>Host and approved travelers</p></div>
+        <div class="members">
+          {% if members %}
+            {% for member in members %}
+              <div class="member {% if member.role == 'host' %}host{% endif %}">
+                <div class="member-avatar">{{ member.username[:1] | upper }}</div>
+                <span>{{ member.username }}</span>
+                <span class="role">{{ member.role }}</span>
+                {% if member.user_id != session['user_id'] %}<a class="dm" href="{{ url_for('private_chat', user_id=member.user_id) }}">DM</a>{% endif %}
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="chip" style="justify-self:center">No approved members yet.</div>
+          {% endif %}
+        </div>
+      </aside>
+
+      <section class="main">
+        <div class="history">
+          <button id="loadOlderBtn" {% if not has_older %}style="display:none"{% endif %}>Load older</button>
+          <span style="font-size:12px;color:var(--muted);font-weight:700">Group receipts + replies + reactions enabled</span>
+        </div>
+
+        <section id="chatArea" class="chat" aria-live="polite">
+          {% if messages %}
+            {% set ns = namespace(prev_day='', unread_inserted=false) %}
+            {% for msg in messages %}
+              {% set msg_day = (msg.created_at|string)[:10] %}
+              {% if msg_day != ns.prev_day %}
+                <div class="day" data-day="{{ msg_day }}"><span>{{ msg_day }}</span></div>
+                {% set ns.prev_day = msg_day %}
+              {% endif %}
+
+              {% if last_read_at and (msg.created_at > last_read_at) and (msg.user_id != session['user_id']) and (not ns.unread_inserted) %}
+                <div class="unread-divider" id="unreadDivider"><span>New messages</span></div>
+                {% set ns.unread_inserted = true %}
+              {% endif %}
+
+              <article class="msg {% if msg.user_id == session['user_id'] %}me{% else %}other{% endif %}" data-id="{{ msg.id }}" data-created="{{ msg.created_at }}" data-starred="{{ msg.starred or 0 }}" data-receipt="{{ msg.receipt_status or 'sent' }}">
+                {% if msg.user_id != session['user_id'] %}
+                <div class="msg-avatar">{{ (msg.username or 'M')[:1] | upper }}</div>
+                {% endif %}
+                <div class="bubble {% if msg.is_flagged %}flagged{% endif %}">
+                  {% if msg.user_id != session['user_id'] %}<div class="sender">{{ msg.username or 'Member' }}</div>{% endif %}
+                  {% if msg.reply_to_id %}<div class="reply-box">↩ {{ msg.reply_to_text or 'Reply' }}</div>{% endif %}
+                  <div class="text">{{ msg.message }}</div>
+                  {% if msg.attachment_url %}<div class="attachment"><a href="{{ msg.attachment_url }}" target="_blank" rel="noopener">📎 {{ msg.attachment_name or 'Attachment' }}</a></div>{% endif %}
+
+                  <div class="meta">
+                    <div class="chips">
+                      {% if msg.edited_at %}<span class="chip">Edited</span>{% endif %}
+                      {% if msg.is_flagged %}<span class="chip warn">Reported</span>{% endif %}
+                      {% if msg.starred %}<span class="chip" data-kind="star">⭐ Starred</span>{% endif %}
+                      {% if msg.user_id == session['user_id'] %}<span class="chip" data-kind="receipt">{{ msg.receipt_status or 'sent' }}</span>{% endif %}
+                    </div>
+                    <time class="time" datetime="{{ msg.created_at }}">{{ msg.created_at }}</time>
+                  </div>
+
+                  <div class="reactions">
+                    {% for emoji,count in (msg.reactions or {}).items() %}
+                      <span class="reaction" data-emoji="{{ emoji }}">{{ emoji }} {{ count }}</span>
+                    {% endfor %}
+                  </div>
+
+                  <div class="actions">
+                    <button type="button" data-action="reply">Reply</button>
+                    <button type="button" data-action="react" data-emoji="👍">👍</button>
+                    <button type="button" data-action="react" data-emoji="❤️">❤️</button>
+                    <button type="button" data-action="star">{{ 'Unstar' if msg.starred else 'Star' }}</button>
+                    {% if msg.user_id == session['user_id'] %}
+                      <button type="button" data-action="edit">Edit</button>
+                      <button type="button" data-action="delete" class="danger">Delete</button>
+                    {% else %}
+                      <button type="button" data-action="flag">Report</button>
+                    {% endif %}
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          {% else %}
+            <div class="chip" style="align-self:center">No messages yet. Start the group conversation.</div>
+          {% endif %}
+        </section>
+
+        <footer class="composer" id="composerZone">
+          <!-- TYPING INDICATOR -->
+          <div id="typingIndicator" class="typing-indicator" aria-live="polite">
+            <div class="typing-dots"><span></span><span></span><span></span></div>
+            <span id="typingLabel" class="typing-label">Someone is typing…</span>
+          </div>
+
+          <div id="replyingBox" class="replying"><span id="replyingText"></span><button id="clearReplyBtn" class="x" type="button">Clear</button></div>
+          <div id="attachPreview" class="attach-preview"><span id="attachText"></span><button id="clearAttachBtn" class="x" type="button">Remove</button></div>
+
+          <form id="messageForm" autocomplete="off">
+            <div class="compose-row">
+              <button type="button" class="attach-btn" id="attachBtn">📎</button>
+              <!-- EMOJI PICKER TRIGGER -->
+              <div class="emoji-wrap">
+                <button type="button" class="attach-btn" id="emojiBtn" title="Emoji">😊</button>
+                <div class="emoji-picker" id="emojiPicker">
+                  {% for e in ['😀','😂','😍','🥰','😎','🤩','🥳','😅','🤔','😮','😢','😡','👍','👎','❤️','🔥','✈️','🏖','🏔','🗺','🎉','🎊','🍕','🍺','🤝','🙏','💪','🚀','⭐','🌟'] %}
+                  <button type="button" data-emoji="{{ e }}">{{ e }}</button>
+                  {% endfor %}
+                </div>
+              </div>
+              <textarea id="messageInput" class="msg-input" maxlength="2000" placeholder="Send a message to the group..."></textarea>
+              <button id="sendBtn" class="send-btn" type="submit">Send ➤</button>
+            </div>
+            <div class="aux">
+              <input id="scheduleAt" type="datetime-local" title="Schedule message">
+              <button type="button" class="btn" id="scheduleBtn">Schedule</button>
+              <button type="button" class="btn" id="clearDraftBtn">Clear draft</button>
+              <input id="fileInput" type="file" hidden>
+              <span id="draftState" style="font-size:12px;color:var(--muted);font-weight:700;margin-left:auto">Draft synced</span>
+            </div>
+          </form>
+          <div id="sendFeedback" class="feedback" aria-live="polite"></div>
+        </footer>
+      </section>
+    </section>
+  </main>
+
+  <button id="floatingUnread" class="jump">New messages ↓</button>
+
+  <nav class="bottom-nav" aria-label="Mobile quick nav">
+    <a href="{{ url_for('mainpage') }}">Home</a>
+    <a href="{{ url_for('messages_page') }}" class="active">Messages</a>
+    <a href="{{ url_for('traveler_profile') }}">Profile</a>
+  </nav>
+
+  <script>
+    (function(){
+      const tripId = Number("{{ post_id }}");
+      const currentUserId = Number("{{ session['user_id'] }}");
+      const tripStatus = "{{ trip_status or '' }}";
+      const socket = io();
+
+      const chatArea = document.getElementById('chatArea');
+      const messageForm = document.getElementById('messageForm');
+      const messageInput = document.getElementById('messageInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const connStatus = document.getElementById('connStatus');
+      const loadOlderBtn = document.getElementById('loadOlderBtn');
+      const sendFeedback = document.getElementById('sendFeedback');
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+      const fileInput = document.getElementById('fileInput');
+      const attachBtn = document.getElementById('attachBtn');
+      const attachPreview = document.getElementById('attachPreview');
+      const attachText = document.getElementById('attachText');
+      const clearAttachBtn = document.getElementById('clearAttachBtn');
+      const replyingBox = document.getElementById('replyingBox');
+      const replyingText = document.getElementById('replyingText');
+      const clearReplyBtn = document.getElementById('clearReplyBtn');
+      const scheduleAt = document.getElementById('scheduleAt');
+      const scheduleBtn = document.getElementById('scheduleBtn');
+      const clearDraftBtn = document.getElementById('clearDraftBtn');
+      const draftState = document.getElementById('draftState');
+
+      const pinBtn = document.getElementById('pinBtn');
+      const archiveBtn = document.getElementById('archiveBtn');
+      const muteBtn = document.getElementById('muteBtn');
+      const broadcastBtn = document.getElementById('broadcastBtn');
+
+      const searchPanel = document.getElementById('searchPanel');
+      const toggleSearch = document.getElementById('toggleSearch');
+      const applySearch = document.getElementById('applySearch');
+      const clearSearch = document.getElementById('clearSearch');
+      const searchQ = document.getElementById('searchQ');
+      const dateFrom = document.getElementById('dateFrom');
+      const dateTo = document.getElementById('dateTo');
+      const senderFilter = document.getElementById('senderFilter');
+
+      const jumpUnreadBtn = document.getElementById('jumpUnreadBtn');
+      const floatingUnread = document.getElementById('floatingUnread');
+
+      const initialDraft = {{ conversation_draft|tojson }};
+      let hasOlder = {{ 'true' if has_older else 'false' }};
+      let sending = false;
+      let lastReadPing = 0;
+      let queue = [];
+      let replyingTo = null;
+      let pendingUpload = null;
+      const pendingByClientId = new Map();
+      let draftTimer = null;
+
+      function setFeedback(text, type=''){ sendFeedback.textContent = text || ''; sendFeedback.className = ('feedback ' + (type || '')).trim(); }
+      function toDate(ts){ const d = new Date(String(ts || '').replace(' ', 'T')); return Number.isNaN(d.getTime()) ? null : d; }
+      function rel(ts){ const d = toDate(ts); if(!d) return String(ts || ''); const sec = Math.floor((Date.now()-d.getTime())/1000); if(sec < 10) return 'just now'; if(sec < 60) return `${sec}s ago`; if(sec < 3600) return `${Math.floor(sec/60)}m ago`; if(sec < 86400) return `${Math.floor(sec/3600)}h ago`; if(sec < 604800) return `${Math.floor(sec/86400)}d ago`; return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'});}
+      function abs(ts){ const d = toDate(ts); return d ? d.toLocaleString('en-IN') : String(ts || ''); }
+      function nearBottom(){ return (chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight) < 150; }
+      function scrollBottom(){ chatArea.scrollTop = chatArea.scrollHeight; }
+
+      function hydrateTime(){
+        chatArea.querySelectorAll('time.time').forEach((el)=>{ const ts = el.getAttribute('datetime') || el.textContent; el.textContent = rel(ts); el.title = abs(ts); });
+        chatArea.querySelectorAll('.day[data-day]').forEach((el)=>{
+          const key = el.dataset.day;
+          const today = new Date();
+          const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+          const y = new Date(); y.setDate(y.getDate()-1);
+          const yKey = `${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,'0')}-${String(y.getDate()).padStart(2,'0')}`;
+          const span = el.querySelector('span'); if(!span) return;
+          if(key === todayKey) span.textContent = 'Today';
+          else if(key === yKey) span.textContent = 'Yesterday';
+          else span.textContent = key;
+        });
+      }
+
+      function showUnreadJump(){
+        const divider = document.getElementById('unreadDivider');
+        if(!divider){ floatingUnread.style.display='none'; return; }
+        const rect = divider.getBoundingClientRect();
+        floatingUnread.style.display = rect.top < 0 ? '' : 'none';
+      }
+
+      function dayKey(ts){ const d = toDate(ts); if(!d) return ''; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+      function makeDay(key){ const d=document.createElement('div'); d.className='day'; d.dataset.day=key; d.innerHTML='<span>'+key+'</span>'; return d; }
+
+      function ensureDayAppend(ts){
+        const key = dayKey(ts);
+        if(!key) return;
+        const msgs = chatArea.querySelectorAll('.msg[data-created]');
+        const last = msgs.length ? msgs[msgs.length-1] : null;
+        const prev = last ? dayKey(last.dataset.created) : '';
+        if(prev !== key) chatArea.appendChild(makeDay(key));
+      }
+
+      function receiptLabel(status){ if(status==='seen') return 'Seen'; if(status==='delivered') return 'Delivered'; return 'Sent'; }
+      function renderReactionRow(target, reactions){ const row = target.querySelector('.reactions'); if(!row) return; row.innerHTML=''; Object.keys(reactions||{}).forEach((emoji)=>{ const cnt=Number(reactions[emoji]||0); if(cnt<=0) return; const s=document.createElement('span'); s.className='reaction'; s.dataset.emoji=emoji; s.textContent=`${emoji} ${cnt}`; row.appendChild(s); }); }
+      function messageById(id){ return id ? chatArea.querySelector(`.msg[data-id="${String(id)}"]`) : null; }
+      function messageByClient(clientId){ return clientId ? chatArea.querySelector(`.msg[data-client-id="${String(clientId)}"]`) : null; }
+
+      function createAction(label, action, extra={}){ const b=document.createElement('button'); b.type='button'; b.dataset.action=action; b.textContent=label; Object.keys(extra).forEach((k)=>b.dataset[k]=extra[k]); if(action==='delete'||action==='flag') b.classList.add('danger'); return b; }
+
+      function messageNode(data, opts={}){
+        const mine = Number(data.user_id) === currentUserId;
+        const m = document.createElement('article');
+        m.className = 'msg ' + (mine ? 'me' : 'other');
+        if(data.id) m.dataset.id = String(data.id);
+        if(opts.clientId) m.dataset.clientId = String(opts.clientId);
+        m.dataset.created = data.created_at || new Date().toISOString();
+        m.dataset.starred = String(data.starred ? 1 : 0);
+        m.dataset.receipt = data.receipt_status || 'sent';
+
+        // Avatar for non-me messages
+        if(!mine){
+          const av = document.createElement('div');
+          av.className = 'msg-avatar';
+          av.textContent = avatarInitial(data.username);
+          m.appendChild(av);
+        }
+
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        if(data.is_flagged) bubble.classList.add('flagged');
+        if(opts.pending) bubble.classList.add('pending');
+        if(opts.failed) bubble.classList.add('failed');
+
+        if(!mine){ const s=document.createElement('div'); s.className='sender'; s.textContent=data.username || 'Member'; bubble.appendChild(s); }
+        if(data.reply_to_id){ const rb=document.createElement('div'); rb.className='reply-box'; rb.textContent='↩ ' + (data.reply_to_text || 'Reply'); bubble.appendChild(rb); }
+
+        const t=document.createElement('div'); t.className='text'; t.textContent=data.message || ''; bubble.appendChild(t);
+        if(data.attachment_url){ const at=document.createElement('div'); at.className='attachment'; at.innerHTML=`<a href="${data.attachment_url}" target="_blank" rel="noopener">📎 ${data.attachment_name || 'Attachment'}</a>`; bubble.appendChild(at); }
+
+        const meta=document.createElement('div'); meta.className='meta';
+        const chips=document.createElement('div'); chips.className='chips';
+        if(data.edited_at){ const c=document.createElement('span'); c.className='chip'; c.textContent='Edited'; chips.appendChild(c); }
+        if(data.is_flagged){ const c=document.createElement('span'); c.className='chip warn'; c.textContent='Reported'; chips.appendChild(c); }
+        if(data.starred){ const c=document.createElement('span'); c.className='chip'; c.dataset.kind='star'; c.textContent='⭐ Starred'; chips.appendChild(c); }
+        if(mine){ const c=document.createElement('span'); c.className='chip'; c.dataset.kind='receipt'; c.textContent = receiptLabel(data.receipt_status || 'sent'); chips.appendChild(c); }
+        meta.appendChild(chips);
+        const time=document.createElement('time'); time.className='time'; time.dateTime=data.created_at || new Date().toISOString(); time.textContent=rel(time.dateTime); time.title=abs(time.dateTime); meta.appendChild(time);
+        bubble.appendChild(meta);
+
+        const reactions=document.createElement('div'); reactions.className='reactions'; bubble.appendChild(reactions); renderReactionRow({ querySelector:()=>reactions }, data.reactions || {});
+
+        const actions=document.createElement('div'); actions.className='actions';
+        actions.appendChild(createAction('Reply','reply'));
+        actions.appendChild(createAction('👍','react',{ emoji:'👍' }));
+        actions.appendChild(createAction('❤️','react',{ emoji:'❤️' }));
+        actions.appendChild(createAction(data.starred ? 'Unstar':'Star','star'));
+        if(mine){ actions.appendChild(createAction('Edit','edit')); actions.appendChild(createAction('Delete','delete')); }
+        else { actions.appendChild(createAction('Report','flag')); }
+        if(opts.failed) actions.appendChild(createAction('Retry','retry'));
+        bubble.appendChild(actions);
+
+        m.appendChild(bubble);
+        return m;
+      }
+
+      function appendMessage(data, opts={}){
+        if(data.id && messageById(data.id)) return;
+        const auto = nearBottom();
+        ensureDayAppend(data.created_at || new Date().toISOString());
+        const node = messageNode(data, opts);
+        chatArea.appendChild(node);
+        if(auto || Number(data.user_id) === currentUserId) scrollBottom();
+        return node;
+      }
+
+      function prependMessages(rows){
+        if(!rows.length) return;
+        const before = chatArea.scrollHeight;
+        const first = chatArea.querySelector('.msg[data-created]');
+        const firstKey = first ? dayKey(first.dataset.created) : '';
+        const frag = document.createDocumentFragment();
+        let prevKey = '';
+        rows.forEach((r)=>{
+          if(r.id && messageById(r.id)) return;
+          const key = dayKey(r.created_at || '');
+          if(key && key !== prevKey){ frag.appendChild(makeDay(key)); prevKey = key; }
+          frag.appendChild(messageNode(r));
+        });
+        if(prevKey && firstKey && prevKey === firstKey){ const dup = chatArea.querySelector(`.day[data-day="${firstKey}"]`); if(dup) dup.remove(); }
+        chatArea.prepend(frag);
+        chatArea.scrollTop = chatArea.scrollHeight - before;
+      }
+
+      function oldestId(){ const first = chatArea.querySelector('.msg[data-id]'); return first ? Number(first.dataset.id) : null; }
+
+      function markRead(force){
+        if(document.visibilityState !== 'visible') return;
+        if(!force && !nearBottom()) return;
+        const now = Date.now();
+        if(now - lastReadPing < 1200) return;
+        lastReadPing = now;
+        fetch(`/api/chat/group/${encodeURIComponent(tripId)}/read`, {
+          method:'POST',
+          credentials:'same-origin',
+          headers:{'X-Requested-With':'XMLHttpRequest', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})}
+        }).catch(()=>{});
+      }
+
+      async function post(url, bodyObj){
+        const body = new URLSearchParams(); Object.keys(bodyObj||{}).forEach((k)=>body.set(k, bodyObj[k]));
+        const res = await fetch(url, {
+          method:'POST', credentials:'same-origin',
+          headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8','X-Requested-With':'XMLHttpRequest', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})},
+          body: body.toString()
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok || data.ok === false) throw new Error(data.error || `Request failed (${res.status})`);
+        return data;
+      }
+
+      async function emitWithAck(event, payload, timeout=7000){
+        return await new Promise((resolve)=>{
+          let done=false;
+          const t=setTimeout(()=>{ if(done) return; done=true; resolve({ ok:false, code:'timeout' }); }, timeout);
+          socket.emit(event, payload, (ack)=>{ if(done) return; done=true; clearTimeout(t); resolve(ack || { ok:false, code:'unknown' }); });
+        });
+      }
+
+      function refreshSendState(){ sendBtn.disabled = messageInput.disabled || (!messageInput.value.trim() && !pendingUpload); }
+
+      function setReply(data){ replyingTo = { id:data.id, text:(data.message || '').slice(0,110) }; replyingText.textContent = `Replying to: ${replyingTo.text}`; replyingBox.classList.add('show'); messageInput.focus(); }
+      function clearReply(){ replyingTo = null; replyingBox.classList.remove('show'); replyingText.textContent=''; }
+      clearReplyBtn.addEventListener('click', clearReply);
+
+      function setAttachment(file, uploadId=null){
+        pendingUpload = file ? { file, uploadId } : null;
+        if(!pendingUpload){ attachPreview.classList.remove('show'); attachText.textContent=''; return; }
+        attachText.textContent = `Attached: ${file.name}` + (uploadId ? ' (ready)' : ' (upload pending)');
+        attachPreview.classList.add('show');
+      }
+
+      async function uploadAttachmentIfNeeded(){
+        if(!pendingUpload || pendingUpload.uploadId) return pendingUpload ? pendingUpload.uploadId : null;
+        const fd = new FormData(); fd.append('file', pendingUpload.file);
+        const res = await fetch(`/api/chat/group/${encodeURIComponent(tripId)}/upload`, {
+          method:'POST', credentials:'same-origin',
+          headers:{'X-Requested-With':'XMLHttpRequest', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})},
+          body: fd
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok || data.ok === false) throw new Error(data.error || 'Upload failed');
+        pendingUpload.uploadId = Number(data.upload_id);
+        setAttachment(pendingUpload.file, pendingUpload.uploadId);
+        return pendingUpload.uploadId;
+      }
+
+      function queueLocal(message, uploadId){
+        const clientId = `g_${Date.now()}_${Math.random().toString(16).slice(2,8)}`;
+        queue.push({ clientId, message, uploadId, replyToId: replyingTo ? replyingTo.id : null, status:'queued' });
+        const el = appendMessage({ id:null, user_id:currentUserId, username:'You', message, created_at:new Date().toISOString(), edited_at:null, is_flagged:0, reply_to_id: replyingTo ? replyingTo.id : null, reply_to_text: replyingTo ? replyingTo.text : '', attachment_name: pendingUpload?.file?.name || '', attachment_url:'', reactions:{}, starred:0, receipt_status:'sent' }, { pending:true, clientId });
+        if(el) pendingByClientId.set(clientId, el);
+      }
+
+      function mapSendError(code){ if(code==='rate_limited') return 'You are sending too fast.'; if(code==='spam_limited') return 'Too many messages in short time.'; if(code==='duplicate') return 'Duplicate message blocked.'; if(code==='chat_closed') return 'Chat is closed for this trip.'; return 'Unable to send message.'; }
+
+      function resolvePending(clientId, payload){
+        const el = messageByClient(clientId); if(!el) return;
+        pendingByClientId.delete(clientId);
+        if(payload.id) el.dataset.id = String(payload.id);
+        el.removeAttribute('data-client-id');
+        el.querySelector('.bubble')?.classList.remove('pending','failed');
+        if(payload.created_at){
+          el.dataset.created = payload.created_at;
+          const t = el.querySelector('time.time');
+          if(t){ t.dateTime = payload.created_at; t.textContent = rel(payload.created_at); t.title = abs(payload.created_at); }
+        }
+      }
+
+      function markPendingFailed(clientId, error){
+        const el = messageByClient(clientId); if(!el) return;
+        el.querySelector('.bubble')?.classList.add('failed');
+        const actions = el.querySelector('.actions');
+        if(actions && !actions.querySelector('button[data-action="retry"]')) actions.appendChild(createAction('Retry','retry'));
+        setFeedback(error, 'error');
+      }
+
+      async function flushQueue(){
+        if(sending || !socket.connected || !queue.length) return;
+        const item = queue.find((q)=>q.status !== 'sent');
+        if(!item){ queue = []; return; }
+        sending = true;
+        const ack = await emitWithAck('send_message', { trip_id:tripId, message:item.message, client_id:item.clientId, reply_to_id:item.replyToId, upload_id:item.uploadId });
+        if(ack && ack.ok){
+          item.status = 'sent';
+          resolvePending(item.clientId, { id: ack.message_id, created_at: ack.created_at });
+          queue = queue.filter((q)=>q.status !== 'sent');
+          setFeedback('', '');
+          markRead(true);
+        } else {
+          item.status = 'failed';
+          markPendingFailed(item.clientId, mapSendError((ack||{}).code));
+        }
+        sending = false;
+        setTimeout(flushQueue, 30);
+      }
+
+      function updateReceipt(msgEl, status){
+        if(!msgEl) return;
+        msgEl.dataset.receipt = status;
+        const chip = msgEl.querySelector('.chip[data-kind="receipt"]');
+        if(chip) chip.textContent = receiptLabel(status);
+      }
+
+      async function saveDraft(force){
+        draftState.textContent = force ? 'Saving draft...' : 'Draft updating...';
+        try{ await post(`/api/chat/group/${encodeURIComponent(tripId)}/draft`, { draft_text: messageInput.value || '' }); draftState.textContent = 'Draft synced'; }
+        catch(_e){ draftState.textContent = 'Draft sync failed'; }
+      }
+
+      messageInput.addEventListener('input', ()=>{
+        refreshSendState();
+        if(draftTimer) clearTimeout(draftTimer);
+        draftTimer = setTimeout(()=>saveDraft(false), 550);
+      });
+      clearDraftBtn.addEventListener('click', ()=>{ messageInput.value=''; refreshSendState(); saveDraft(true); });
+
+      attachBtn.addEventListener('click', ()=>fileInput.click());
+      fileInput.addEventListener('change', ()=>{ const file=fileInput.files && fileInput.files[0]; if(!file) return; setAttachment(file, null); refreshSendState(); });
+      clearAttachBtn.addEventListener('click', ()=>{ fileInput.value=''; setAttachment(null); refreshSendState(); });
+
+      const composerZone = document.getElementById('composerZone');
+      ['dragenter','dragover'].forEach((ev)=>composerZone.addEventListener(ev, (e)=>{ e.preventDefault(); composerZone.style.borderColor='rgba(37,99,235,.45)'; }));
+      ['dragleave','drop'].forEach((ev)=>composerZone.addEventListener(ev, (e)=>{ e.preventDefault(); composerZone.style.borderColor=''; }));
+      composerZone.addEventListener('drop', (e)=>{ const file = e.dataTransfer?.files?.[0]; if(!file) return; fileInput.files = e.dataTransfer.files; setAttachment(file, null); refreshSendState(); });
+
+      messageForm.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        if(messageInput.disabled) return;
+        const text = messageInput.value.trim();
+        if(!text && !pendingUpload) return;
+        try{
+          const uploadId = await uploadAttachmentIfNeeded();
+          queueLocal(text, uploadId);
+          messageInput.value='';
+          clearReply();
+          setAttachment(null);
+          refreshSendState();
+          flushQueue();
+          saveDraft(true);
+        }catch(err){ setFeedback(err.message || 'Send failed','error'); }
+      });
+
+      scheduleBtn.addEventListener('click', async ()=>{
+        const msg = messageInput.value.trim();
+        const runAt = scheduleAt.value;
+        if(!msg || !runAt){ setFeedback('Enter message and schedule time','error'); return; }
+        try{
+          await post(`/api/chat/group/${encodeURIComponent(tripId)}/schedule`, { message: msg, run_at: runAt.replace('T',' ') });
+          messageInput.value=''; scheduleAt.value=''; clearReply(); refreshSendState(); saveDraft(true);
+          setFeedback('Message scheduled successfully','info');
+        }catch(err){ setFeedback(err.message || 'Schedule failed','error'); }
+      });
+
+      broadcastBtn?.addEventListener('click', async ()=>{
+        const msg = window.prompt('Broadcast message to all approved travelers:');
+        if(msg === null) return;
+        const trimmed = msg.trim();
+        if(!trimmed) return;
+        try{ await post(`/api/chat/group/${encodeURIComponent(tripId)}/broadcast`, { message: trimmed }); setFeedback('Broadcast sent','info'); }
+        catch(err){ setFeedback(err.message || 'Broadcast failed','error'); }
+      });
+
+      async function applySearchFilter(){
+        const params = new URLSearchParams(); params.set('limit','100');
+        if(searchQ.value.trim()) params.set('q', searchQ.value.trim());
+        if(dateFrom.value) params.set('date_from', dateFrom.value);
+        if(dateTo.value) params.set('date_to', dateTo.value);
+        if(senderFilter.value) params.set('sender_id', senderFilter.value);
+        try{
+          const res = await fetch(`/api/chat/group/${encodeURIComponent(tripId)}/messages?` + params.toString(), { credentials:'same-origin' });
+          if(!res.ok) throw new Error('search failed');
+          const data = await res.json();
+          chatArea.innerHTML = '';
+          let prev='';
+          (data.messages || []).forEach((m)=>{ const k=dayKey(m.created_at||''); if(k && k!==prev){ chatArea.appendChild(makeDay(k)); prev=k; } chatArea.appendChild(messageNode(m)); });
+          hasOlder = !!data.has_more;
+          loadOlderBtn.style.display = hasOlder ? '' : 'none';
+          hydrateTime(); scrollBottom();
+        }catch(err){ setFeedback(err.message || 'Search failed','error'); }
+      }
+
+      async function setState(patch){
+        try{
+          await post(`/api/chat/group/${encodeURIComponent(tripId)}/state`, patch);
+          if('pinned' in patch) pinBtn.classList.toggle('active', Number(patch.pinned)===1);
+          if('archived' in patch) archiveBtn.classList.toggle('active', Number(patch.archived)===1);
+          if('mute_minutes' in patch) muteBtn.classList.add('active');
+        }catch(err){ setFeedback(err.message || 'State update failed','error'); }
+      }
+
+      pinBtn.addEventListener('click', ()=>setState({ pinned: pinBtn.classList.contains('active') ? 0 : 1 }));
+      archiveBtn.addEventListener('click', ()=>setState({ archived: archiveBtn.classList.contains('active') ? 0 : 1 }));
+      muteBtn.addEventListener('click', ()=>setState({ mute_minutes:60 }));
+
+      toggleSearch.addEventListener('click', ()=>searchPanel.classList.toggle('open'));
+      applySearch.addEventListener('click', applySearchFilter);
+      clearSearch.addEventListener('click', ()=>{ searchQ.value=''; dateFrom.value=''; dateTo.value=''; senderFilter.value=''; window.location.reload(); });
+
+      jumpUnreadBtn.addEventListener('click', ()=>document.getElementById('unreadDivider')?.scrollIntoView({ behavior:'smooth', block:'center' }));
+      floatingUnread.addEventListener('click', ()=>document.getElementById('unreadDivider')?.scrollIntoView({ behavior:'smooth', block:'center' }));
+
+      async function loadOlder(){
+        if(!hasOlder) return;
+        const beforeId = oldestId();
+        if(!beforeId) return;
+        loadOlderBtn.disabled = true;
+        const params = new URLSearchParams(); params.set('before_id', String(beforeId)); params.set('limit','50');
+        if(searchQ.value.trim()) params.set('q', searchQ.value.trim());
+        if(dateFrom.value) params.set('date_from', dateFrom.value);
+        if(dateTo.value) params.set('date_to', dateTo.value);
+        if(senderFilter.value) params.set('sender_id', senderFilter.value);
+        try{
+          const res = await fetch(`/api/chat/group/${encodeURIComponent(tripId)}/messages?` + params.toString(), { credentials:'same-origin' });
+          if(!res.ok) throw new Error('load failed');
+          const data = await res.json();
+          prependMessages(data.messages || []);
+          hasOlder = !!data.has_more;
+          if(!hasOlder) loadOlderBtn.style.display='none';
+        }catch(err){ console.error(err); }
+        loadOlderBtn.disabled = false;
+      }
+
+      chatArea.addEventListener('click', async (e)=>{
+        const btn = e.target.closest('button[data-action]');
+        if(!btn) return;
+        const action = btn.dataset.action;
+        const msgEl = btn.closest('.msg');
+        if(!msgEl) return;
+        const msgId = Number(msgEl.dataset.id || 0);
+        const clientId = msgEl.dataset.clientId;
+
+        if(action === 'retry' && clientId){
+          const item = queue.find((q)=>q.clientId === clientId);
+          if(!item) return;
+          item.status='queued';
+          msgEl.querySelector('.bubble')?.classList.remove('failed');
+          setFeedback('Retrying...','info');
+          flushQueue();
+          return;
+        }
+        if(action === 'reply'){ const text = msgEl.querySelector('.text')?.textContent || ''; setReply({ id: msgId, message: text }); return; }
+        if(!msgId) return;
+
+        try{
+          if(action==='edit'){
+            const textNode = msgEl.querySelector('.text');
+            const current = textNode ? textNode.textContent : '';
+            const next = window.prompt('Edit message', current || '');
+            if(next === null) return;
+            const trimmed = next.trim();
+            if(!trimmed) return;
+            const data = await post(`/api/chat/group/${encodeURIComponent(tripId)}/messages/${encodeURIComponent(msgId)}/edit`, { message:trimmed });
+            if(textNode) textNode.textContent = data.message || trimmed;
+            setFeedback('Message updated','info');
+            return;
+          }
+          if(action==='delete'){
+            if(!window.confirm('Delete this message?')) return;
+            await post(`/api/chat/group/${encodeURIComponent(tripId)}/messages/${encodeURIComponent(msgId)}/delete`, {});
+            msgEl.remove();
+            setFeedback('Message deleted','info');
+            return;
+          }
+          if(action==='flag'){
+            if(!window.confirm('Report this message?')) return;
+            await post(`/api/chat/group/${encodeURIComponent(tripId)}/messages/${encodeURIComponent(msgId)}/flag`, {});
+            msgEl.querySelector('.bubble')?.classList.add('flagged');
+            setFeedback('Message reported','info');
+            return;
+          }
+          if(action==='react'){
+            const emoji = btn.dataset.emoji || '👍';
+            const data = await post(`/api/chat/group/${encodeURIComponent(tripId)}/messages/${encodeURIComponent(msgId)}/reaction`, { reaction: emoji });
+            renderReactionRow(msgEl, data.reactions || {});
+            return;
+          }
+          if(action==='star'){
+            const data = await post(`/api/chat/group/${encodeURIComponent(tripId)}/messages/${encodeURIComponent(msgId)}/star`, {});
+            msgEl.dataset.starred = String(data.starred ? 1 : 0);
+            const hasChip = !!msgEl.querySelector('.chip[data-kind="star"]');
+            if(data.starred && !hasChip){ const c=document.createElement('span'); c.className='chip'; c.dataset.kind='star'; c.textContent='⭐ Starred'; msgEl.querySelector('.chips')?.appendChild(c); }
+            if(!data.starred && hasChip) msgEl.querySelector('.chip[data-kind="star"]')?.remove();
+            btn.textContent = data.starred ? 'Unstar' : 'Star';
+            return;
+          }
+        }catch(err){ setFeedback(err.message || 'Action failed','error'); }
+      });
+
+      chatArea.addEventListener('scroll', ()=>{ markRead(false); showUnreadJump(); });
+      document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') markRead(true); });
+      window.addEventListener('focus', ()=>markRead(true));
+      loadOlderBtn?.addEventListener('click', loadOlder);
+
+      socket.on('connect', ()=>{
+        connStatus.textContent = 'Connected';
+        connStatus.style.color = '#16a34a';
+        socket.emit('join_trip', { trip_id: tripId }, (ack)=>{
+          if(!ack || !ack.ok){ setFeedback('Unable to join room','error'); return; }
+          markRead(true);
+          flushQueue();
+        });
+      });
+      socket.on('disconnect', ()=>{ connStatus.textContent='Disconnected'; connStatus.style.color='#ef4444'; });
+      socket.io.on('reconnect_attempt', ()=>{ connStatus.textContent='Reconnecting...'; connStatus.style.color='#f59e0b'; });
+
+      socket.on('message', (data)=>{
+        if(!data || Number(data.trip_id) !== tripId) return;
+        if(data.client_id && pendingByClientId.has(data.client_id)){ resolvePending(data.client_id, data); return; }
+        appendMessage(data);
+        if(Number(data.user_id) !== currentUserId) markRead(false);
+        showUnreadJump();
+      });
+
+      socket.on('trip_message_updated', (data)=>{ if(!data || Number(data.trip_id)!==tripId) return; const m=messageById(data.id); if(!m) return; const t=m.querySelector('.text'); if(t) t.textContent = data.message || ''; });
+      socket.on('trip_message_deleted', (data)=>{ if(!data || Number(data.trip_id)!==tripId) return; messageById(data.id)?.remove(); });
+      socket.on('trip_message_flagged', (data)=>{ if(!data || Number(data.trip_id)!==tripId) return; messageById(data.id)?.querySelector('.bubble')?.classList.add('flagged'); });
+
+      socket.on('group_reaction_updated', (data)=>{ if(!data || Number(data.trip_id)!==tripId) return; const m=messageById(data.message_id); if(!m) return; renderReactionRow(m, data.reactions || {}); });
+      socket.on('group_star_updated', (data)=>{
+        if(!data || Number(data.trip_id)!==tripId) return;
+        if(Number(data.user_id)!==currentUserId) return;
+        const m=messageById(data.message_id); if(!m) return;
+        m.dataset.starred = String(data.starred ? 1 : 0);
+        const btn = m.querySelector('button[data-action="star"]');
+        if(btn) btn.textContent = data.starred ? 'Unstar' : 'Star';
+      });
+      socket.on('group_receipts_updated', (data)=>{ if(!data || Number(data.channel_id)!==tripId) return; (data.rows || []).forEach((r)=>updateReceipt(messageById(r.message_id), r.status || 'sent')); });
+
+      if(tripStatus === 'completed' || tripStatus === 'cancelled'){
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        scheduleBtn.disabled = true;
+        broadcastBtn && (broadcastBtn.disabled = true);
+        connStatus.textContent = 'Chat closed';
+      }
+
+      if(initialDraft && !messageInput.value) messageInput.value = initialDraft;
+      hydrateTime();
+      refreshSendState();
+      scrollBottom();
+      showUnreadJump();
+      markRead(true);
+
+      /* ── EMOJI PICKER ── */
+      const emojiBtn = document.getElementById('emojiBtn');
+      const emojiPicker = document.getElementById('emojiPicker');
+      if(emojiBtn && emojiPicker){
+        emojiBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          emojiPicker.classList.toggle('open');
+        });
+        emojiPicker.addEventListener('click',(e)=>{
+          const btn = e.target.closest('button[data-emoji]');
+          if(!btn) return;
+          const emoji = btn.dataset.emoji;
+          const pos = messageInput.selectionStart;
+          const val = messageInput.value;
+          messageInput.value = val.slice(0,pos) + emoji + val.slice(pos);
+          messageInput.focus();
+          messageInput.setSelectionRange(pos+emoji.length, pos+emoji.length);
+          emojiPicker.classList.remove('open');
+          refreshSendState();
+        });
+        document.addEventListener('click',()=> emojiPicker.classList.remove('open'));
+      }
+
+      /* ── TYPING INDICATOR ── */
+      const typingIndicator = document.getElementById('typingIndicator');
+      const typingLabel = document.getElementById('typingLabel');
+      const typingUsers = new Map();
+      let typingTimer;
+      let lastTypingEmit = 0;
+
+      messageInput.addEventListener('input',()=>{
+        const now = Date.now();
+        if(now - lastTypingEmit > 2000){
+          lastTypingEmit = now;
+          socket.emit('typing_start', { trip_id: tripId });
+        }
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(()=>{
+          socket.emit('typing_stop', { trip_id: tripId });
+        }, 2500);
+      });
+
+      socket.on('user_typing', (data)=>{
+        if(!data || Number(data.trip_id) !== tripId || Number(data.user_id) === currentUserId) return;
+        typingUsers.set(data.user_id, data.username || 'Someone');
+        updateTypingDisplay();
+      });
+      socket.on('user_stopped_typing', (data)=>{
+        if(!data || Number(data.trip_id) !== tripId) return;
+        typingUsers.delete(data.user_id);
+        updateTypingDisplay();
+      });
+      function updateTypingDisplay(){
+        if(!typingIndicator) return;
+        if(typingUsers.size === 0){
+          typingIndicator.classList.remove('show');
+          return;
+        }
+        const names = Array.from(typingUsers.values());
+        const label = names.length === 1
+          ? `${names[0]} is typing…`
+          : `${names.slice(0,-1).join(', ')} and ${names[names.length-1]} are typing…`;
+        if(typingLabel) typingLabel.textContent = label;
+        typingIndicator.classList.add('show');
+      }
+
+      /* ── AVATAR COLOR HELPER for dynamic messages ── */
+      function avatarInitial(name){ return (name || '?')[0].toUpperCase(); }
+
+      window.addEventListener('beforeunload', ()=>{ try{ if(draftTimer) clearTimeout(draftTimer); socket.emit('leave_trip',{ trip_id: tripId }); socket.close(); }catch(_e){} });
+    })();
+  </script>
+</body>
+</html>

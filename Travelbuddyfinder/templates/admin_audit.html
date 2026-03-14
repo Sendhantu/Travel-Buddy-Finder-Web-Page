@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin Audit Log | Travel Buddy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#f0ede8;--surface:#faf9f7;--surface2:#f2efe9;--border:rgba(0,0,0,.08);--text:#1a1714;--muted:#847d76}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
+    a{text-decoration:none;color:inherit}
+    header{height:66px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0}
+    .brand{font-family:'Sora',sans-serif;font-weight:800}
+    .nav{display:flex;gap:8px;align-items:center}.nav a{border:1px solid var(--border);background:var(--surface2);border-radius:999px;padding:7px 10px;font-size:12px;font-weight:700}
+    .page{max-width:1180px;margin:20px auto;padding:0 16px 40px}
+    .panel{border:1px solid var(--border);background:var(--surface);border-radius:16px;overflow:hidden}
+    table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:12px;text-align:left;vertical-align:top}
+    th{background:var(--surface2);font-weight:800;color:#4a433b}
+    tr:last-child td{border-bottom:none}
+    .details{white-space:pre-wrap;word-break:break-word;max-width:460px;color:#3f3a34}
+    .empty{padding:40px;text-align:center;color:var(--muted)}
+    .toolbar{margin-bottom:10px;display:flex;justify-content:flex-end;gap:8px;align-items:center}
+    .toolbar select{border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700}
+    .toolbar button{border:1px solid var(--border);background:var(--surface2);border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700}
+    .toolbar .meta{margin-right:auto;font-size:12px;color:var(--muted);font-weight:700}
+    .pager{margin-top:12px;display:flex;align-items:center;justify-content:flex-end;gap:8px}
+    .pager a{padding:7px 11px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:700}
+    .pager a.disabled{opacity:.45;pointer-events:none}
+    .pager span{font-size:12px;color:var(--muted);font-weight:700}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Admin Audit Log</div>
+    <nav class="nav">
+      <a href="{{ url_for('admin_messages') }}">Messages</a>
+      <a href="{{ url_for('admin_moderation') }}">Moderation</a>
+      <a href="{{ url_for('admin_chat_analytics') }}">Analytics</a>
+      <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <form class="toolbar" method="get" action="{{ url_for('admin_audit_log') }}">
+      <span class="meta">{{ total }} entr{{ 'y' if total == 1 else 'ies' }}</span>
+      <select name="per_page">
+        <option value="50" {{ 'selected' if per_page == 50 else '' }}>50 / page</option>
+        <option value="80" {{ 'selected' if per_page == 80 else '' }}>80 / page</option>
+        <option value="120" {{ 'selected' if per_page == 120 else '' }}>120 / page</option>
+      </select>
+      <button type="submit">Apply</button>
+    </form>
+
+    <section class="panel">
+      {% if rows %}
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Time</th>
+            <th>Admin</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th>Target ID</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>{{ row.id }}</td>
+            <td>{{ row.created_at }}</td>
+            <td>{{ row.admin_name }}</td>
+            <td>{{ row.action_type }}</td>
+            <td>{{ row.target_type }}</td>
+            <td>{{ row.target_id or '-' }}</td>
+            <td><div class="details">{{ row.details or '-' }}</div></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty">No audit entries yet.</div>
+      {% endif %}
+    </section>
+
+    {% if total_pages > 1 %}
+    <nav class="pager" aria-label="Audit pagination">
+      <a class="{{ 'disabled' if not has_prev else '' }}"
+         href="{{ url_for('admin_audit_log', per_page=per_page, page=page-1) }}">Prev</a>
+      <span>Page {{ page }} / {{ total_pages }}</span>
+      <a class="{{ 'disabled' if not has_next else '' }}"
+         href="{{ url_for('admin_audit_log', per_page=per_page, page=page+1) }}">Next</a>
+    </nav>
+    {% endif %}
+  </main>
+</body>
+</html>

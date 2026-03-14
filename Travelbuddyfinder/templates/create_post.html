@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Create Travel Plan | Travel Buddy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ─── TOKENS ─── */
+    :root {
+      --bg:            #f0ede8;
+      --bg2:           #e8e4de;
+      --surface:       #faf9f7;
+      --surface2:      #f2efe9;
+      --border:        rgba(0,0,0,0.07);
+      --muted:         #8c8680;
+      --text:          #1a1714;
+      --text2:         #3d3a36;
+      --primary:       #e8622a;
+      --primary-light: #fde8dc;
+      --primary-dark:  #c44e1c;
+      --success:       #2a7d4f;
+      --success-light: #d4f0e2;
+      --danger:        #c0392b;
+      --danger-light:  #fde8e6;
+      --warning:       #b45309;
+      --warning-light: #fef3c7;
+      --info:          #1d6fa4;
+      --info-light:    #dbeafe;
+      --font-head: 'Sora', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --shadow-sm:   0 2px 8px rgba(0,0,0,0.06);
+      --shadow-md:   0 6px 20px rgba(0,0,0,0.09);
+      --shadow-lg:   0 12px 32px rgba(0,0,0,0.12);
+      --shadow-card: 0 4px 16px rgba(0,0,0,0.07);
+      --focus-ring:  0 0 0 3px rgba(232,98,42,0.3);
+      --transition:  .2s cubic-bezier(.4,0,.2,1);
+    }
+    :root[data-theme="dark"] {
+      --bg:#0e0d0b; --bg2:#161410; --surface:#1c1a17; --surface2:#242118;
+      --border:rgba(255,255,255,0.07); --muted:#7a7470; --text:#f0ede8; --text2:#c8c4be;
+      --primary:#f07540; --primary-light:rgba(240,117,64,0.15); --primary-dark:#e8622a;
+      --success:#34d399; --success-light:rgba(52,211,153,0.12);
+      --danger:#f87171;  --danger-light:rgba(248,113,113,0.12);
+      --warning:#fbbf24; --warning-light:rgba(251,191,36,0.12);
+      --info:#60a5fa;    --info-light:rgba(96,165,250,0.12);
+      --shadow-sm:0 2px 8px rgba(0,0,0,0.4); --shadow-md:0 6px 20px rgba(0,0,0,0.5);
+      --shadow-lg:0 12px 32px rgba(0,0,0,0.6); --shadow-card:0 4px 16px rgba(0,0,0,0.4);
+    }
+    :root[data-theme="high-contrast"] {
+      --bg:#000; --bg2:#000; --surface:#000; --surface2:#111;
+      --border:rgba(255,255,255,0.3); --muted:#aaa; --text:#fff; --text2:#ddd;
+      --primary:#ff0; --primary-light:#222200; --primary-dark:#ffd400;
+      --success:#0f0; --success-light:#002200; --danger:#f00; --danger-light:#220000;
+      --warning:#f90; --warning-light:#221100; --info:#0ff; --info-light:#002222;
+      --shadow-sm:none; --shadow-md:none; --shadow-lg:none; --shadow-card:none;
+      --focus-ring:0 0 0 3px #fff;
+    }
+
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    html,body { height:100%; }
+    body {
+      font-family:var(--font-body); background:var(--bg); color:var(--text);
+      -webkit-font-smoothing:antialiased; line-height:1.5; min-height:100vh;
+      padding:24px 16px 80px;
+    }
+    a { color:inherit; text-decoration:none; }
+    button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
+    :focus-visible { outline:none; box-shadow:var(--focus-ring); border-radius:var(--radius-sm); }
+
+    /* ─── SKIP LINK ─── */
+    .skip-link { position:fixed; top:-100px; left:16px; z-index:999; background:var(--primary); color:#fff; padding:10px 18px; border-radius:var(--radius-md); font-weight:700; transition:top .2s; }
+    .skip-link:focus { top:16px; }
+
+    /* ─── TOAST ─── */
+    #toast-container { position:fixed; bottom:28px; right:28px; z-index:900; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+    .toast { background:var(--surface); color:var(--text); padding:12px 18px; border-radius:var(--radius-md); box-shadow:var(--shadow-lg); font-weight:600; font-size:14px; display:flex; align-items:center; gap:10px; animation:toastIn .3s ease forwards; pointer-events:auto; border-left:4px solid var(--primary); font-family:var(--font-body); }
+    .toast.success { border-color:var(--success); }
+    .toast.danger  { border-color:var(--danger); }
+    .toast.warning { border-color:var(--warning); }
+    @keyframes toastIn  { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
+    @keyframes toastOut { from{opacity:1;}to{opacity:0;transform:translateY(12px);} }
+
+    /* ─── HEADER ─── */
+    header.header { background:var(--surface); height:66px; padding:0 28px; display:flex; justify-content:space-between; align-items:center; gap:16px; box-shadow:var(--shadow-sm); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:40; margin:-24px -16px 32px; }
+    .header-left { display:flex; align-items:center; gap:12px; }
+    .brand-logo { width:36px; height:36px; border-radius:10px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:18px; }
+    .brand-name { font-family:var(--font-head); font-size:17px; font-weight:800; }
+    .brand-name span { color:var(--primary); }
+    .back-btn { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; color:var(--text2); background:var(--surface2); border:1px solid var(--border); transition:all var(--transition); }
+    .back-btn:hover { background:var(--bg2); color:var(--text); }
+    #themeToggle { width:38px; height:38px; border-radius:var(--radius-sm); background:var(--surface2); color:var(--text); display:flex; align-items:center; justify-content:center; font-size:17px; border:1px solid var(--border); transition:background var(--transition); }
+    #themeToggle:hover { background:var(--bg2); }
+
+    /* ─── PAGE WRAPPER ─── */
+    .page { max-width:900px; margin:0 auto; }
+
+    /* ─── HERO ─── */
+    .page-hero { background:var(--surface); border-radius:var(--radius-xl); padding:26px 30px; display:flex; align-items:center; justify-content:space-between; gap:20px; box-shadow:var(--shadow-card); border:1px solid var(--border); margin-bottom:24px; position:relative; overflow:hidden; }
+    .page-hero::before { content:''; position:absolute; right:-40px; top:-40px; width:180px; height:180px; border-radius:50%; background:radial-gradient(circle,var(--primary-light) 0%,transparent 70%); pointer-events:none; }
+    .page-hero h1 { font-family:var(--font-head); font-size:20px; font-weight:800; margin-bottom:3px; }
+    .page-hero h1 span { color:var(--primary); }
+    .page-hero p { font-size:13px; color:var(--muted); }
+    .autosave-chip { font-size:12px; font-weight:700; background:var(--success-light); color:var(--success); padding:5px 14px; border-radius:999px; border:1px solid rgba(42,125,79,.2); white-space:nowrap; position:relative; z-index:1; display:none; }
+    .autosave-chip.visible { display:inline-flex; align-items:center; gap:5px; }
+
+    /* ─── STEPS BAR ─── */
+    .steps-bar { background:var(--surface); border-radius:var(--radius-lg); border:1px solid var(--border); box-shadow:var(--shadow-card); padding:20px 28px; margin-bottom:22px; }
+    .steps-track { display:flex; align-items:center; gap:0; margin-bottom:16px; }
+    .step-item { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--muted); white-space:nowrap; cursor:pointer; transition:color var(--transition); }
+    .step-item.active { color:var(--primary); }
+    .step-item.done   { color:var(--success); }
+    .step-num { width:28px; height:28px; border-radius:50%; background:var(--surface2); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; font-family:var(--font-head); transition:all var(--transition); flex-shrink:0; }
+    .step-item.active .step-num { background:var(--primary); border-color:var(--primary); color:#fff; box-shadow:0 4px 10px rgba(232,98,42,.3); }
+    .step-item.done   .step-num { background:var(--success); border-color:var(--success); color:#fff; }
+    .step-line { flex:1; height:2px; background:var(--border); margin:0 12px; min-width:20px; transition:background .35s; }
+    .step-line.done { background:var(--success); }
+    /* Progress bar */
+    .progress-bar { height:6px; background:var(--surface2); border-radius:999px; overflow:hidden; border:1px solid var(--border); }
+    .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--primary),#f5a623); border-radius:999px; transition:width .35s cubic-bezier(.4,0,.2,1); }
+
+    /* ─── FORM CARD ─── */
+    .form-card { background:var(--surface); border-radius:var(--radius-xl); border:1px solid var(--border); box-shadow:var(--shadow-card); overflow:hidden; }
+
+    .form-step { display:none; padding:28px 28px 0; animation:stepIn .25s ease both; }
+    .form-step.active { display:block; }
+    @keyframes stepIn { from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);} }
+
+    /* ─── SECTION HEADS ─── */
+    .section-head { display:flex; align-items:center; gap:10px; margin-bottom:22px; }
+    .section-icon { width:38px; height:38px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .section-icon.orange { background:var(--primary-light); }
+    .section-icon.blue   { background:var(--info-light); }
+    .section-icon.green  { background:var(--success-light); }
+    .section-head h2 { font-family:var(--font-head); font-size:16px; font-weight:800; }
+    .section-head p { font-size:12px; color:var(--muted); margin-top:2px; }
+
+    /* ─── GRID ─── */
+    .form-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:20px; }
+    .col-full { grid-column:1 / -1; }
+
+    /* ─── FIELD ─── */
+    .field { display:flex; flex-direction:column; gap:6px; }
+    .field label { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+    .field label .req { color:var(--danger); margin-left:2px; }
+    .input-wrap { position:relative; display:flex; align-items:center; }
+    .input-icon { position:absolute; left:13px; font-size:14px; color:var(--muted); pointer-events:none; z-index:1; }
+
+    input[type="text"], input[type="date"], input[type="number"], textarea, select.field-select {
+      width:100%; padding:11px 14px; border-radius:var(--radius-md);
+      border:1.5px solid var(--border); background:var(--surface2);
+      color:var(--text); font-family:var(--font-body); font-size:14px;
+      transition:border-color var(--transition),box-shadow var(--transition),background var(--transition);
+    }
+    .has-icon input, .has-icon textarea { padding-left:38px; }
+    input:focus, textarea:focus { outline:none; border-color:var(--primary); box-shadow:var(--focus-ring); background:var(--surface); }
+    input.has-err, textarea.has-err { border-color:var(--danger); }
+    textarea { resize:vertical; min-height:110px; }
+
+    .field-hint { font-size:12px; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
+    .char-count { font-weight:700; }
+    .char-count.warn { color:var(--warning); }
+    .char-count.over { color:var(--danger); }
+    .field-error { font-size:12px; font-weight:700; color:var(--danger); display:none; align-items:center; gap:4px; }
+    .field-error.visible { display:flex; }
+
+    /* ─── DROP ZONE ─── */
+    .drop-zone { border:2px dashed var(--border); border-radius:var(--radius-lg); padding:28px; text-align:center; background:var(--surface2); cursor:pointer; transition:border-color var(--transition),background var(--transition); position:relative; }
+    .drop-zone:hover, .drop-zone.drag-over { border-color:var(--primary); background:var(--primary-light); }
+    .drop-zone input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .drop-icon { font-size:32px; display:block; margin-bottom:8px; }
+    .drop-zone h4 { font-family:var(--font-head); font-size:14px; font-weight:700; margin-bottom:4px; }
+    .drop-zone p  { font-size:12px; color:var(--muted); }
+    .img-preview-wrap { margin-top:14px; border-radius:var(--radius-lg); overflow:hidden; display:none; border:1.5px solid var(--border); position:relative; }
+    .img-preview-wrap.visible { display:block; }
+    .img-preview-wrap img { width:100%; max-height:240px; object-fit:cover; display:block; }
+    .img-remove-btn { position:absolute; top:10px; right:10px; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:999px; padding:4px 12px; font-size:12px; font-weight:700; cursor:pointer; backdrop-filter:blur(4px); transition:background var(--transition); }
+    .img-remove-btn:hover { background:var(--danger); }
+
+    /* ─── MAP ─── */
+    .map-wrap { margin-top:0; border-radius:var(--radius-lg); overflow:hidden; border:1.5px solid var(--border); background:var(--surface2); }
+    .map-wrap iframe { width:100%; height:280px; border:0; display:block; }
+    .map-placeholder { height:280px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; color:var(--muted); font-size:14px; font-weight:600; }
+
+    /* ─── PREVIEW SUMMARY ─── */
+    .preview-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:20px; }
+    .preview-item { background:var(--surface2); border-radius:var(--radius-md); padding:14px 16px; border:1px solid var(--border); }
+    .preview-item .pi-label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+    .preview-item .pi-val   { font-family:var(--font-head); font-size:15px; font-weight:800; color:var(--text); }
+
+    /* ─── DIVIDER ─── */
+    .form-divider { height:1px; background:var(--border); margin:24px 0 0; }
+
+    /* ─── ACTIONS BAR ─── */
+    .actions-bar { padding:20px 28px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; border-top:1px solid var(--border); }
+    .actions-left, .actions-right { display:flex; gap:10px; align-items:center; }
+
+    .btn-primary { display:inline-flex; align-items:center; gap:8px; padding:12px 24px; border-radius:var(--radius-md); font-family:var(--font-body); font-size:14px; font-weight:800; background:var(--primary); color:#fff; box-shadow:0 4px 14px rgba(232,98,42,.3); transition:all var(--transition); }
+    .btn-primary:hover  { background:var(--primary-dark); transform:translateY(-1px); box-shadow:0 6px 18px rgba(232,98,42,.4); }
+    .btn-primary:disabled { opacity:.6; pointer-events:none; }
+
+    .btn-success { display:inline-flex; align-items:center; gap:8px; padding:12px 24px; border-radius:var(--radius-md); font-family:var(--font-body); font-size:14px; font-weight:800; background:var(--success); color:#fff; box-shadow:0 4px 14px rgba(42,125,79,.3); transition:all var(--transition); }
+    .btn-success:hover  { background:#1e6640; transform:translateY(-1px); }
+    .btn-success:disabled { opacity:.6; pointer-events:none; }
+
+    .btn-ghost { display:inline-flex; align-items:center; gap:6px; padding:11px 18px; border-radius:var(--radius-md); font-family:var(--font-body); font-size:14px; font-weight:700; background:var(--surface2); color:var(--text2); border:1px solid var(--border); transition:all var(--transition); }
+    .btn-ghost:hover { background:var(--bg2); color:var(--text); }
+
+    .btn-back { display:inline-flex; align-items:center; gap:6px; padding:11px 16px; border-radius:var(--radius-md); font-size:13px; font-weight:700; background:transparent; color:var(--muted); border:1px solid var(--border); transition:all var(--transition); }
+    .btn-back:hover { color:var(--text); background:var(--surface2); }
+
+    /* ─── FORM ERROR ─── */
+    .form-alert { margin:0 28px 16px; padding:12px 16px; border-radius:var(--radius-md); font-size:13px; font-weight:700; display:none; align-items:center; gap:8px; background:var(--danger-light); color:var(--danger); border:1px solid rgba(192,57,43,.15); }
+    .form-alert.visible { display:flex; }
+
+    /* ─── DRAFT RESTORED BANNER ─── */
+    .draft-banner { margin:0 28px 20px; padding:12px 16px; border-radius:var(--radius-md); font-size:13px; font-weight:600; display:none; align-items:center; gap:10px; background:var(--info-light); color:var(--info); border:1px solid rgba(29,111,164,.15); }
+    .draft-banner.visible { display:flex; }
+    .draft-banner button { font-size:12px; font-weight:700; color:var(--danger); background:var(--danger-light); border:1px solid rgba(192,57,43,.15); border-radius:999px; padding:3px 10px; margin-left:auto; transition:all var(--transition); }
+    .draft-banner button:hover { background:var(--danger); color:#fff; }
+
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+    /* ─── RESPONSIVE ─── */
+    @media(max-width:680px) {
+      header.header { margin:-24px -16px 24px; padding:0 16px; }
+      .form-grid { grid-template-columns:1fr; }
+      .col-full { grid-column:1; }
+      .form-step { padding:20px 18px 0; }
+      .actions-bar { padding:16px 18px; flex-direction:column; align-items:stretch; }
+      .actions-left, .actions-right { justify-content:center; }
+      .btn-primary, .btn-success, .btn-ghost { justify-content:center; }
+      .steps-bar { padding:16px 18px; }
+      .page-hero { flex-direction:column; align-items:flex-start; padding:20px; }
+      .preview-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- HEADER -->
+  <header class="header" role="banner">
+    <div class="header-left">
+      <div class="brand-logo" aria-hidden="true">🌍</div>
+      <span class="brand-name">Travel<span>Buddy</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <a href="/" class="back-btn">🏠 Home</a>
+      <button id="themeToggle" aria-label="Toggle color theme">☀️</button>
+    </div>
+  </header>
+
+  <main id="mainContent" class="page" role="main">
+
+    <!-- HERO -->
+    <div class="page-hero" role="region" aria-label="Page header">
+      <div>
+        <h1>🌍 Create <span>Travel Plan</span></h1>
+        <p>Fill in the details step-by-step. Your progress is auto-saved.</p>
+      </div>
+      <span class="autosave-chip" id="autosaveChip">✔ Draft saved</span>
+    </div>
+
+    <!-- STEPS BAR -->
+    <div class="steps-bar" role="region" aria-label="Form progress">
+      <div class="steps-track" role="tablist" aria-label="Creation steps">
+        <div class="step-item active" id="step-dot-1" role="tab" aria-selected="true" tabindex="0">
+          <div class="step-num">1</div>
+          <span>Basics</span>
+        </div>
+        <div class="step-line" id="step-line-1"></div>
+        <div class="step-item" id="step-dot-2" role="tab" aria-selected="false" tabindex="-1">
+          <div class="step-num">2</div>
+          <span>Details</span>
+        </div>
+        <div class="step-line" id="step-line-2"></div>
+        <div class="step-item" id="step-dot-3" role="tab" aria-selected="false" tabindex="-1">
+          <div class="step-num">3</div>
+          <span>Preview</span>
+        </div>
+      </div>
+      <div class="progress-bar" aria-hidden="true">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <!-- FORM CARD -->
+    <!-- BUG FIX: added enctype="multipart/form-data" — file uploads were silently dropped -->
+    <div class="form-card">
+      <form id="createForm" action="{{ url_for('create_post') }}" method="post"
+            enctype="multipart/form-data" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <!-- DRAFT RESTORED BANNER -->
+        <div class="draft-banner" id="draftBanner">
+          <span>📝</span>
+          <span>Draft restored — your previous progress has been loaded.</span>
+          <button type="button" id="clearDraftBtn">Discard</button>
+        </div>
+
+        <!-- FORM ERROR -->
+        <div class="form-alert" id="formAlert" role="alert" aria-live="assertive">
+          <span>⚠️</span><span id="formAlertText"></span>
+        </div>
+
+        <!-- ── STEP 1: BASICS ── -->
+        <section class="form-step active" id="form-step-1" role="tabpanel" aria-labelledby="step-dot-1">
+          <div class="section-head">
+            <div class="section-icon orange">📍</div>
+            <div>
+              <h2>Trip Basics</h2>
+              <p>Where are you going and when?</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="destination">Destination <span class="req">*</span></label>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true">📍</span>
+                <input id="destination" name="destination" type="text" required maxlength="120"
+                       autocomplete="off" placeholder="e.g. Goa, Manali, Coorg"
+                       aria-required="true" aria-describedby="dest-err">
+              </div>
+              <div class="field-error" id="dest-err">⚠ Destination is required.</div>
+            </div>
+
+            <div class="field">
+              <label for="start_location">Starting Location</label>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true">🚉</span>
+                <input id="start_location" name="start_location" type="text" maxlength="120"
+                       autocomplete="off" placeholder="e.g. Hyderabad, Bangalore">
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="travel_date">Travel Date <span class="req">*</span></label>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true">📅</span>
+                <input id="travel_date" name="travel_date" type="date" required
+                       aria-required="true" aria-describedby="date-err"
+                       style="padding-left:38px;">
+              </div>
+              <div class="field-error" id="date-err">⚠ Travel date is required.</div>
+            </div>
+
+            <div class="field">
+              <label for="duration">Duration (days)</label>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true">🌙</span>
+                <input id="duration" name="duration" type="number" min="1" step="1"
+                       value="1" placeholder="e.g. 3" style="padding-left:38px;">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── STEP 2: DETAILS ── -->
+        <section class="form-step" id="form-step-2" role="tabpanel" aria-labelledby="step-dot-2">
+          <div class="section-head">
+            <div class="section-icon blue">📋</div>
+            <div>
+              <h2>Trip Details</h2>
+              <p>Capacity, pricing, and description.</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="max_people">Max People <span class="req">*</span></label>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true">👥</span>
+                <input id="max_people" name="max_people" type="number" min="1" required
+                       placeholder="e.g. 10" aria-required="true" aria-describedby="people-err"
+                       style="padding-left:38px;">
+              </div>
+              <div class="field-error" id="people-err">⚠ Must be at least 1.</div>
+            </div>
+
+            <div class="field">
+              <label for="price">Price per Person (₹) <span class="req">*</span></label>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true">₹</span>
+                <input id="price" name="price" type="number" min="0" step="0.01" required
+                       placeholder="e.g. 4500" aria-required="true" aria-describedby="price-err"
+                       style="padding-left:38px;">
+              </div>
+              <div class="field-error" id="price-err">⚠ Enter a valid price.</div>
+            </div>
+
+            <div class="field col-full">
+              <label for="description">Trip Description</label>
+              <textarea id="description" name="description" maxlength="2000"
+                        placeholder="Describe the trip — meeting point, itinerary, what to bring…"
+                        aria-describedby="desc-hint"></textarea>
+              <div class="field-hint" id="desc-hint">
+                <span>Include meeting point and highlights</span>
+                <span class="char-count" id="descCount" aria-live="polite">0 / 2000</span>
+              </div>
+            </div>
+
+            <div class="field col-full">
+              <label for="itinerary">Detailed Itinerary</label>
+              <textarea id="itinerary" name="itinerary" maxlength="4000"
+                        placeholder="Day 1: Arrival, check-in...\nDay 2: Morning hike...\nDay 3: Return..."
+                        aria-describedby="itinerary-hint"></textarea>
+              <div class="field-hint" id="itinerary-hint">
+                <span>Optional: add day-wise plan so travelers know what to expect</span>
+              </div>
+            </div>
+
+            <div class="field col-full">
+              <label>Cover Image</label>
+              <div class="drop-zone" id="dropZone" role="button" tabindex="0"
+                   aria-label="Upload cover image — click or drag and drop">
+                <input id="fileInput" name="image" type="file"
+                       accept="image/jpeg,image/png,image/webp"
+                       aria-describedby="img-err">
+                <span class="drop-icon">🖼️</span>
+                <h4>Click or drag & drop</h4>
+                <p>JPG, PNG or WebP — max 3 MB</p>
+              </div>
+              <div class="field-error" id="img-err" role="alert" style="margin-top:8px;">
+                <span>⚠️</span><span id="imgErrText"></span>
+              </div>
+              <div class="img-preview-wrap" id="previewWrap">
+                <img id="previewImg" alt="Selected cover preview" src="">
+                <button type="button" class="img-remove-btn" id="removeImg">✕ Remove</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── STEP 3: PREVIEW ── -->
+        <section class="form-step" id="form-step-3" role="tabpanel" aria-labelledby="step-dot-3">
+          <div class="section-head">
+            <div class="section-icon green">✅</div>
+            <div>
+              <h2>Preview & Publish</h2>
+              <p>Review your trip before publishing.</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Destination Map</label>
+            <div class="map-wrap" id="mapWrap">
+              <div class="map-placeholder" id="mapPlaceholder">
+                <span style="font-size:32px;">🗺️</span>
+                <span>Enter a destination to see the map</span>
+              </div>
+              <iframe id="mapFrame" width="100%" height="280" style="border:0;display:none;"
+                      title="Destination map" loading="lazy" referrerpolicy="no-referrer"></iframe>
+            </div>
+          </div>
+
+          <div class="preview-grid" id="previewGrid">
+            <div class="preview-item">
+              <div class="pi-label">Destination</div>
+              <div class="pi-val" id="pv-dest">—</div>
+            </div>
+            <div class="preview-item">
+              <div class="pi-label">Starting From</div>
+              <div class="pi-val" id="pv-start">—</div>
+            </div>
+            <div class="preview-item">
+              <div class="pi-label">Travel Date</div>
+              <div class="pi-val" id="pv-date">—</div>
+            </div>
+            <div class="preview-item">
+              <div class="pi-label">Duration</div>
+              <div class="pi-val" id="pv-dur">—</div>
+            </div>
+            <div class="preview-item">
+              <div class="pi-label">Max People</div>
+              <div class="pi-val" id="pv-ppl">—</div>
+            </div>
+            <div class="preview-item">
+              <div class="pi-label">Price / Person</div>
+              <div class="pi-val" id="pv-price">—</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ACTIONS BAR -->
+        <div class="actions-bar" role="group" aria-label="Form actions">
+          <div class="actions-left">
+            <!-- BUG FIX: removed aria-hidden="true" from back button -->
+            <button type="button" id="btnBack" class="btn-back" style="display:none">← Back</button>
+            <button type="submit" id="btnDraft" name="action" value="draft" class="btn-ghost">💾 Save Draft</button>
+          </div>
+          <div class="actions-right">
+            <button type="button"   id="btnNext"    class="btn-primary">Next →</button>
+            <button type="submit"   id="btnPublish" name="action" value="publish" class="btn-success" style="display:none">🚀 Publish Trip</button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+  </main>
+
+  <script>
+  (function(){
+
+    /* ── THEME ── */
+    const root   = document.documentElement;
+    const tBtn   = document.getElementById('themeToggle');
+    const THEMES = ['default','dark','high-contrast'];
+    const ICONS  = { default:'☀️', dark:'🌙', 'high-contrast':'⚡' };
+    let current  = localStorage.getItem('tb_theme') || 'default';
+    function applyTheme(t){ current=t; t==='default'?root.removeAttribute('data-theme'):root.setAttribute('data-theme',t); if(tBtn)tBtn.textContent=ICONS[t]; localStorage.setItem('tb_theme',t); }
+    applyTheme(current);
+    tBtn?.addEventListener('click',()=>applyTheme(THEMES[(THEMES.indexOf(current)+1)%THEMES.length]));
+
+    /* ── TOAST ── */
+    function toast(msg,type='info',ms=3200){
+      const c=document.getElementById('toast-container'); if(!c)return;
+      const icons={info:'ℹ️',success:'✅',danger:'❌',warning:'⚠️'};
+      const el=document.createElement('div'); el.className=`toast ${type}`;
+      el.innerHTML=`<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+      c.appendChild(el);
+      setTimeout(()=>{ el.style.animation='toastOut .3s ease forwards'; setTimeout(()=>el.remove(),300); },ms);
+    }
+
+    /* ── REFS ── */
+    const form        = document.getElementById('createForm');
+    const btnNext     = document.getElementById('btnNext');
+    const btnBack     = document.getElementById('btnBack');
+    const btnPublish  = document.getElementById('btnPublish');
+    const progFill    = document.getElementById('progressFill');
+    const descEl      = document.getElementById('description');
+    const itineraryEl = document.getElementById('itinerary');
+    const descCount   = document.getElementById('descCount');
+    const dropZone    = document.getElementById('dropZone');
+    const fileInput   = document.getElementById('fileInput');
+    const previewWrap = document.getElementById('previewWrap');
+    const previewImg  = document.getElementById('previewImg');
+    const removeImg   = document.getElementById('removeImg');
+    const imgErr      = document.getElementById('img-err');
+    const imgErrText  = document.getElementById('imgErrText');
+    const formAlert   = document.getElementById('formAlert');
+    const formAlertTxt= document.getElementById('formAlertText');
+    const mapFrame    = document.getElementById('mapFrame');
+    const mapPH       = document.getElementById('mapPlaceholder');
+    const draftBanner = document.getElementById('draftBanner');
+    const clearDraftBtn=document.getElementById('clearDraftBtn');
+    const autosaveChip= document.getElementById('autosaveChip');
+
+    const TOTAL_STEPS = 3;
+    let currentStep   = 1;
+    let blobUrl       = null; /* track so we can revoke it */
+    const DRAFT_KEY   = 'tb_draft_v2';
+    const MAX_SIZE    = 3 * 1024 * 1024;
+    const ALLOWED     = ['image/jpeg','image/png','image/webp'];
+
+    /* ── STEP NAVIGATION ── */
+    function setStep(n){
+      currentStep = Math.max(1, Math.min(TOTAL_STEPS, n));
+
+      document.querySelectorAll('.form-step').forEach((p,i)=>{
+        const active = i === currentStep-1;
+        p.classList.toggle('active', active);
+      });
+
+      document.querySelectorAll('.step-item').forEach((d,i)=>{
+        d.classList.toggle('active', i === currentStep-1);
+        d.classList.toggle('done',   i  < currentStep-1);
+        d.setAttribute('aria-selected', i === currentStep-1 ? 'true' : 'false');
+        d.tabIndex = i === currentStep-1 ? 0 : -1;
+      });
+
+      document.querySelectorAll('.step-line').forEach((l,i)=>{
+        l.classList.toggle('done', i < currentStep-1);
+      });
+
+      /* Progress: 0% at step1, 50% at step2, 100% at step3 */
+      progFill.style.width = `${((currentStep-1)/(TOTAL_STEPS-1))*100}%`;
+
+      btnBack.style.display    = currentStep === 1         ? 'none'         : 'inline-flex';
+      btnNext.style.display    = currentStep === TOTAL_STEPS ? 'none'       : 'inline-flex';
+      btnPublish.style.display = currentStep === TOTAL_STEPS ? 'inline-flex': 'none';
+
+      if(currentStep === TOTAL_STEPS) updatePreview();
+      clearFormAlert();
+
+      /* Scroll to top of card */
+      document.querySelector('.form-card')?.scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+
+    /* ── FIELD ERROR HELPERS ── */
+    function showFieldErr(id){ document.getElementById(id)?.classList.add('visible'); }
+    function hideFieldErr(id){ document.getElementById(id)?.classList.remove('visible'); }
+    function setInputErr(el, errId, show){
+      el?.classList.toggle('has-err', show);
+      show ? showFieldErr(errId) : hideFieldErr(errId);
+    }
+    function clearFormAlert(){ formAlert.classList.remove('visible'); }
+    function showFormAlert(msg){ formAlertTxt.textContent=msg; formAlert.classList.add('visible'); }
+
+    /* ── VALIDATION ── */
+    function validateStep(n){
+      clearFormAlert();
+      let ok = true;
+      if(n === 1){
+        const dest = document.getElementById('destination').value.trim();
+        const date = document.getElementById('travel_date').value;
+        if(!dest){ setInputErr(document.getElementById('destination'),'dest-err',true); ok=false; }
+        else       setInputErr(document.getElementById('destination'),'dest-err',false);
+        if(!date){ setInputErr(document.getElementById('travel_date'),'date-err',true); ok=false; }
+        else       setInputErr(document.getElementById('travel_date'),'date-err',false);
+        if(!ok){ showFormAlert('Please fill in the required fields.'); }
+      }
+      if(n === 2){
+        const ppl   = document.getElementById('max_people').value;
+        const price = document.getElementById('price').value;
+        if(!ppl || Number(ppl)<1){
+          setInputErr(document.getElementById('max_people'),'people-err',true); ok=false;
+        } else setInputErr(document.getElementById('max_people'),'people-err',false);
+        if(price==='' || Number(price)<0){
+          setInputErr(document.getElementById('price'),'price-err',true); ok=false;
+        } else setInputErr(document.getElementById('price'),'price-err',false);
+        if(!ok){ showFormAlert('Please fix the highlighted fields.'); }
+      }
+      return ok;
+    }
+
+    /* Live clear on input */
+    [['destination','dest-err'],['travel_date','date-err'],['max_people','people-err'],['price','price-err']].forEach(([id,errId])=>{
+      const el = document.getElementById(id);
+      if(el) el.addEventListener('input',()=>{ setInputErr(el,errId,false); clearFormAlert(); });
+    });
+
+    /* ── NEXT / BACK ── */
+    btnNext?.addEventListener('click',()=>{
+      if(!validateStep(currentStep)) return;
+      setStep(currentStep+1);
+    });
+    btnBack?.addEventListener('click',()=> setStep(currentStep-1));
+
+    /* ── STEP DOT KEYBOARD NAV ── */
+    document.querySelectorAll('.step-item').forEach((dot,idx)=>{
+      dot.addEventListener('keydown',e=>{
+        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); if(validateStep(currentStep)) setStep(idx+1); }
+        if(e.key==='ArrowRight'){ e.preventDefault(); document.querySelectorAll('.step-item')[(idx+1)%TOTAL_STEPS]?.focus(); }
+        if(e.key==='ArrowLeft'){  e.preventDefault(); document.querySelectorAll('.step-item')[(idx-1+TOTAL_STEPS)%TOTAL_STEPS]?.focus(); }
+      });
+    });
+
+    /* ── DESCRIPTION COUNTER ── */
+    function updateDescCount(){
+      const len = descEl.value.length;
+      const max = parseInt(descEl.maxLength);
+      descCount.textContent = `${len} / ${max}`;
+      descCount.className   = 'char-count' + (len>max*.9?' warn':'') + (len>=max?' over':'');
+    }
+    updateDescCount();
+    descEl?.addEventListener('input', ()=>{ updateDescCount(); autosave(); });
+
+    /* ── IMAGE UPLOAD ── */
+    function showImgErr(msg){ imgErr.classList.add('visible'); imgErrText.textContent=msg; }
+    function clearImgErr(){ imgErr.classList.remove('visible'); imgErrText.textContent=''; }
+
+    function processFile(file){
+      if(!file) return;
+      clearImgErr();
+      if(!ALLOWED.includes(file.type)){ showImgErr('Unsupported file type. Use JPG, PNG, or WebP.'); return; }
+      if(file.size > MAX_SIZE){ showImgErr('File too large. Max 3 MB.'); return; }
+      /* BUG FIX: revoke previous blob to avoid memory leak */
+      if(blobUrl){ URL.revokeObjectURL(blobUrl); blobUrl=null; }
+      blobUrl = URL.createObjectURL(file);
+      previewImg.src = blobUrl;
+      previewWrap.classList.add('visible');
+      toast('Image selected — will be uploaded on publish.','info');
+    }
+
+    fileInput?.addEventListener('change',()=>{
+      if(fileInput.files?.[0]) processFile(fileInput.files[0]);
+    });
+
+    dropZone?.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone?.addEventListener('dragleave', ()=> dropZone.classList.remove('drag-over'));
+    dropZone?.addEventListener('drop', e=>{
+      e.preventDefault(); dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0]; if(file) processFile(file);
+    });
+    dropZone?.addEventListener('click', ()=> fileInput.click());
+    dropZone?.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fileInput.click(); } });
+
+    removeImg?.addEventListener('click',()=>{
+      previewWrap.classList.remove('visible');
+      previewImg.src = '';
+      fileInput.value = '';
+      if(blobUrl){ URL.revokeObjectURL(blobUrl); blobUrl=null; }
+      clearImgErr();
+    });
+
+    /* ── PREVIEW (step 3) ── */
+    function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    function updatePreview(){
+      const dest  = document.getElementById('destination').value.trim();
+      const start = document.getElementById('start_location').value.trim();
+      const date  = document.getElementById('travel_date').value;
+      const dur   = document.getElementById('duration').value || '1';
+      const ppl   = document.getElementById('max_people').value;
+      const pr    = document.getElementById('price').value;
+
+      document.getElementById('pv-dest').textContent  = dest  || '—';
+      document.getElementById('pv-start').textContent = start || '—';
+      document.getElementById('pv-date').textContent  = date  ? new Date(date).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) : '—';
+      document.getElementById('pv-dur').textContent   = dur   ? `${dur} day${dur>1?'s':''}` : '—';
+      document.getElementById('pv-ppl').textContent   = ppl   ? `${ppl} people` : '—';
+      document.getElementById('pv-price').textContent = pr!=='' ? `₹${Number(pr).toLocaleString('en-IN',{minimumFractionDigits:2})}` : '—';
+
+      /* BUG FIX: use OpenStreetMap embed (no API key required, correct URL format) */
+      if(dest){
+        mapFrame.src = `https://maps.google.com/maps?q=${encodeURIComponent(dest)}&output=embed&hl=en`;
+        mapFrame.style.display = 'block';
+        mapPH.style.display    = 'none';
+      } else {
+        mapFrame.style.display = 'none';
+        mapPH.style.display    = 'flex';
+        mapFrame.src           = '';
+      }
+    }
+
+    /* ── FORM SUBMIT ── */
+    form?.addEventListener('submit', e=>{
+      if(!validateStep(1)||!validateStep(2)){
+        e.preventDefault();
+        setStep(validateStep(1) ? 2 : 1);
+      }
+      /* If valid: native form submit proceeds (multipart/form-data to Flask) */
+    });
+
+    /* ── AUTOSAVE ── */
+    /* BUG FIX: save a __draft:true flag so restore actually works */
+    function autosave(){
+      try {
+        const data = {
+          __draft: true,   /* ← was missing; restore checked this flag */
+          destination:    document.getElementById('destination').value,
+          start_location: document.getElementById('start_location').value,
+          travel_date:    document.getElementById('travel_date').value,
+          duration:       document.getElementById('duration').value,
+          max_people:     document.getElementById('max_people').value,
+          price:          document.getElementById('price').value,
+          description:    descEl.value,
+          itinerary:      itineraryEl ? itineraryEl.value : '',
+          _savedAt:       Date.now()
+        };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+        autosaveChip.classList.add('visible');
+        clearTimeout(autosaveChip._t);
+        autosaveChip._t = setTimeout(()=> autosaveChip.classList.remove('visible'), 2500);
+      } catch(err){}
+    }
+
+    /* Auto-save on any input change */
+    form?.querySelectorAll('input:not([type=file]),textarea').forEach(el=>{
+      el.addEventListener('input', autosave);
+    });
+    setInterval(autosave, 15000);
+
+    /* ── RESTORE DRAFT ── */
+    try {
+      const saved = JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}');
+      if(saved && saved.__draft === true){
+        const anyValue = saved.destination || saved.description || saved.travel_date;
+        if(anyValue){
+          document.getElementById('destination').value    = saved.destination    || '';
+          document.getElementById('start_location').value = saved.start_location || '';
+          document.getElementById('travel_date').value    = saved.travel_date    || '';
+          document.getElementById('duration').value        = saved.duration       || '1';
+          document.getElementById('max_people').value     = saved.max_people     || '';
+          document.getElementById('price').value           = saved.price          || '';
+          descEl.value = saved.description || '';
+          if(itineraryEl) itineraryEl.value = saved.itinerary || '';
+          updateDescCount();
+          draftBanner.classList.add('visible');
+        }
+      }
+    } catch(err){}
+
+    clearDraftBtn?.addEventListener('click',()=>{
+      localStorage.removeItem(DRAFT_KEY);
+      form.reset(); updateDescCount();
+      draftBanner.classList.remove('visible');
+      toast('Draft discarded.','warning');
+    });
+
+    /* ── ENTER key: advance step ── */
+    form?.querySelectorAll('input[type="text"],input[type="date"],input[type="number"]').forEach(el=>{
+      el.addEventListener('keydown', e=>{
+        if(e.key==='Enter'){
+          e.preventDefault();
+          if(currentStep < TOTAL_STEPS){ if(validateStep(currentStep)) setStep(currentStep+1); }
+          else btnPublish?.focus();
+        }
+      });
+    });
+
+    /* ── INIT ── */
+    setStep(1);
+
+  })();
+  </script>
+</body>
+</html>

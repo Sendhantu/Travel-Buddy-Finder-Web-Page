@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Login | Travel Buddy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ─── TOKENS ─── */
+    :root {
+      --bg-from:      #f5ede4;
+      --bg-to:        #e8ddd3;
+      --surface:      rgba(250,249,247,0.92);
+      --surface-solid:#faf9f7;
+      --border:       rgba(0,0,0,0.08);
+      --muted:        #8c8680;
+      --text:         #1a1714;
+      --text2:        #3d3a36;
+      --primary:      #e8622a;
+      --primary-hover:#c44e1c;
+      --primary-light:#fde8dc;
+      --success:      #2a7d4f;
+      --success-light:#d4f0e2;
+      --danger:       #c0392b;
+      --danger-light: #fde8e6;
+      --font-head: 'Sora', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --radius:    16px;
+      --radius-sm: 10px;
+      --shadow-card: 0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+      --focus-ring: 0 0 0 3px rgba(232,98,42,0.28);
+      --ease: cubic-bezier(.22,.9,.2,1);
+      --transition: .2s var(--ease);
+    }
+    :root[data-theme="dark"] {
+      --bg-from:      #0e0d0b;
+      --bg-to:        #161410;
+      --surface:      rgba(28,26,23,0.95);
+      --surface-solid:#1c1a17;
+      --border:       rgba(255,255,255,0.08);
+      --muted:        #7a7470;
+      --text:         #f0ede8;
+      --text2:        #c8c4be;
+      --primary:      #f07540;
+      --primary-hover:#e8622a;
+      --primary-light:rgba(240,117,64,0.15);
+      --success:      #34d399; --success-light:rgba(52,211,153,0.12);
+      --danger:       #f87171; --danger-light:rgba(248,113,113,0.12);
+      --shadow-card:  0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.4);
+    }
+    :root[data-theme="high-contrast"] {
+      --bg-from:#000; --bg-to:#000;
+      --surface:rgba(0,0,0,0.98); --surface-solid:#000;
+      --border:rgba(255,255,255,0.35); --muted:#aaa; --text:#fff; --text2:#ddd;
+      --primary:#ff0; --primary-hover:#ffd400; --primary-light:#222200;
+      --danger:#f00; --danger-light:#220000;
+      --success:#0f0; --success-light:#002200;
+      --shadow-card:none; --focus-ring:0 0 0 3px #fff;
+    }
+
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    html,body { height:100%; }
+    body {
+      min-height:100vh;
+      display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(135deg, var(--bg-from) 0%, var(--bg-to) 100%);
+      font-family:var(--font-body);
+      color:var(--text);
+      padding:24px;
+      -webkit-font-smoothing:antialiased;
+      transition:background var(--transition);
+    }
+
+    /* ─── THEME TOGGLE (top-right) ─── */
+    #themeToggle {
+      position:fixed; top:18px; right:18px; z-index:50;
+      width:40px; height:40px; border-radius:var(--radius-sm);
+      background:var(--surface); border:1px solid var(--border);
+      font-size:18px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:var(--shadow-card);
+      transition:background var(--transition);
+    }
+    #themeToggle:hover { background:var(--primary-light); }
+
+    /* ─── CARD ─── */
+    .card {
+      position:relative; z-index:1;
+      width:440px; max-width:100%;
+      border-radius:24px;
+      padding:44px 38px;
+      background:var(--surface);
+      backdrop-filter:blur(24px);
+      -webkit-backdrop-filter:blur(24px);
+      border:1px solid rgba(255,255,255,0.35);
+      box-shadow:var(--shadow-card);
+      animation:fadeUp 480ms var(--ease) both;
+    }
+    :root[data-theme="dark"] .card,
+    :root[data-theme="high-contrast"] .card {
+      border-color:var(--border);
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);} }
+
+    /* ─── BRAND ─── */
+    .brand { text-align:center; margin-bottom:32px; }
+    .brand-logo {
+      display:inline-flex; width:60px; height:60px;
+      border-radius:16px; background:var(--primary);
+      align-items:center; justify-content:center;
+      margin-bottom:18px;
+      box-shadow:0 8px 20px rgba(232,98,42,0.28);
+      font-size:28px;
+    }
+    .brand h1 {
+      font-family:var(--font-head); font-size:26px; font-weight:800;
+      color:var(--text); letter-spacing:-.02em; margin-bottom:6px;
+    }
+    .brand h1 span { color:var(--primary); }
+    .brand p { font-size:14px; color:var(--muted); }
+
+    /* ─── ALERT BANNERS ─── */
+    .alert {
+      display:flex; align-items:flex-start; gap:10px;
+      margin-bottom:20px; padding:12px 14px;
+      border-radius:var(--radius-sm); font-size:13.5px; font-weight:500;
+      animation:fadeUp .25s ease both;
+    }
+    .alert.danger  { background:var(--danger-light);  color:var(--danger);  border:1px solid rgba(192,57,43,.15); }
+    .alert.success { background:var(--success-light); color:var(--success); border:1px solid rgba(42,125,79,.15); }
+    .alert.info    { background:var(--primary-light); color:var(--primary); border:1px solid rgba(232,98,42,.15); }
+    .alert-icon { flex-shrink:0; margin-top:1px; }
+    [hidden] { display:none !important; }
+
+    /* ─── FIELD ─── */
+    .field { margin-bottom:20px; }
+    .field-label {
+      display:flex; justify-content:space-between; align-items:baseline;
+      margin-bottom:7px;
+    }
+    .field-label label {
+      font-size:12px; font-weight:700; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.5px;
+    }
+    .label-link {
+      font-size:12.5px; color:var(--primary); font-weight:600;
+      text-decoration:none; transition:color var(--transition);
+    }
+    .label-link:hover { color:var(--primary-hover); }
+
+    .input-wrap { position:relative; display:flex; align-items:center; }
+    .input-icon {
+      position:absolute; left:14px; color:var(--muted);
+      display:flex; pointer-events:none; transition:color var(--transition);
+    }
+    .input-wrap:focus-within .input-icon { color:var(--primary); }
+
+    .input-wrap input {
+      width:100%;
+      padding:13px 14px 13px 44px;
+      border-radius:var(--radius-sm);
+      border:1.5px solid var(--border);
+      background:var(--surface-solid);
+      color:var(--text);
+      font-family:var(--font-body); font-size:14.5px;
+      outline:none;
+      transition:border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+    .input-wrap input::placeholder { color:var(--muted); }
+    .input-wrap input:focus {
+      border-color:var(--primary);
+      box-shadow:var(--focus-ring);
+    }
+    .input-wrap input.has-err {
+      border-color:var(--danger);
+      box-shadow:0 0 0 3px rgba(192,57,43,.15);
+    }
+
+    /* Password toggle */
+    .pwd-toggle {
+      position:absolute; right:12px;
+      background:transparent; border:0;
+      color:var(--muted); cursor:pointer;
+      padding:4px 8px; border-radius:6px;
+      font-size:12.5px; font-weight:600;
+      font-family:var(--font-body);
+      transition:all .15s;
+    }
+    .pwd-toggle:hover { color:var(--text); background:var(--primary-light); }
+
+    /* Field error */
+    .field-err {
+      margin-top:6px; font-size:12.5px; font-weight:600;
+      color:var(--danger); display:none; align-items:center; gap:5px;
+    }
+    .field-err.visible { display:flex; }
+
+    /* ─── EXTRAS ROW ─── */
+    .extras {
+      display:flex; align-items:center; justify-content:space-between;
+      margin:8px 0 24px;
+    }
+    .checkbox-label {
+      display:flex; align-items:center; gap:8px;
+      font-size:13.5px; color:var(--text2);
+      cursor:pointer; user-select:none;
+    }
+    .checkbox-label input[type="checkbox"] {
+      appearance:none; width:17px; height:17px;
+      border-radius:5px; border:1.5px solid var(--border);
+      background:var(--surface-solid); cursor:pointer;
+      transition:all .15s; position:relative; flex-shrink:0;
+    }
+    .checkbox-label input[type="checkbox"]:checked {
+      background:var(--primary); border-color:var(--primary);
+    }
+    .checkbox-label input[type="checkbox"]:checked::after {
+      content:''; position:absolute; inset:0;
+      background:url("data:image/svg+xml,%3Csvg viewBox='0 0 10 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 4l2.5 2.5L9 1' stroke='%23ffffff' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/70% no-repeat;
+    }
+
+    /* ─── SUBMIT BUTTON ─── */
+    .btn-submit {
+      width:100%; padding:14px;
+      border-radius:var(--radius-sm); border:0;
+      background:var(--primary); color:#fff;
+      font-family:var(--font-head); font-size:15px; font-weight:700;
+      cursor:pointer;
+      box-shadow:0 4px 14px rgba(232,98,42,0.3);
+      transition:all var(--transition);
+      display:flex; align-items:center; justify-content:center; gap:10px;
+    }
+    .btn-submit:hover:not(:disabled) {
+      background:var(--primary-hover);
+      transform:translateY(-1px);
+      box-shadow:0 6px 18px rgba(232,98,42,0.4);
+    }
+    .btn-submit:active:not(:disabled) { transform:translateY(0); }
+    .btn-submit:disabled { opacity:.65; cursor:not-allowed; }
+
+    /* Spinner inside button */
+    .spinner {
+      width:18px; height:18px;
+      border:2.5px solid rgba(255,255,255,0.3);
+      border-top-color:#fff;
+      border-radius:50%;
+      animation:spin 700ms linear infinite;
+      display:none; flex-shrink:0;
+    }
+    .btn-submit[aria-busy="true"] .spinner { display:block; }
+    .btn-submit[aria-busy="true"] .btn-text { opacity:.8; }
+    @keyframes spin { to{transform:rotate(360deg);} }
+
+    /* ─── DIVIDER ─── */
+    .divider {
+      display:flex; align-items:center; gap:12px;
+      margin:24px 0; font-size:12px; font-weight:600; color:var(--muted);
+    }
+    .divider::before, .divider::after {
+      content:''; flex:1; height:1px; background:var(--border);
+    }
+
+    /* ─── FOOTER ─── */
+    .footer-link { text-align:center; margin-top:22px; font-size:14px; color:var(--muted); }
+    .footer-link a { color:var(--primary); text-decoration:none; font-weight:700; transition:color var(--transition); }
+    .footer-link a:hover { color:var(--primary-hover); }
+
+    /* ─── STRENGTH METER ─── */
+    .strength-bar {
+      margin-top:8px; display:none; gap:4px; height:4px;
+    }
+    .strength-bar.visible { display:flex; }
+    .strength-seg {
+      flex:1; height:4px; border-radius:2px;
+      background:var(--border); transition:background .3s;
+    }
+
+    @media(max-width:480px) {
+      .card { padding:32px 22px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- THEME TOGGLE -->
+  <button id="themeToggle" aria-label="Toggle color theme">☀️</button>
+
+  <main class="card" role="main" aria-labelledby="pageTitle">
+
+    <!-- BRAND -->
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true">🌍</div>
+      <h1 id="pageTitle">Travel<span>Buddy</span></h1>
+      <p>Sign in to plan your next adventure</p>
+    </div>
+
+    <!-- SERVER ERROR (Jinja renders this if Flask flashes an error) -->
+    {% if error %}
+    <div class="alert danger" role="alert" aria-live="assertive" id="serverErrorBanner">
+      <span class="alert-icon">⚠️</span>
+      <span>{{ error }}</span>
+    </div>
+    {% else %}
+    <div class="alert danger" role="alert" aria-live="assertive" id="serverErrorBanner" hidden>
+      <span class="alert-icon">⚠️</span>
+      <span id="serverErrorText"></span>
+    </div>
+    {% endif %}
+
+    <!-- RATE LIMIT HINT (populated by JS after repeated failures) -->
+    <div class="alert info" role="status" aria-live="polite" id="rateHint" hidden>
+      <span class="alert-icon">ℹ️</span>
+      <span id="rateHintText"></span>
+    </div>
+
+    <!-- FORM -->
+    <form id="loginForm" method="post" action="{{ url_for('login') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <!-- USERNAME -->
+      <div class="field">
+        <div class="field-label">
+          <label for="username">Username</label>
+        </div>
+        <div class="input-wrap">
+          <span class="input-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <input
+            id="username" name="username" type="text"
+            autocomplete="username"
+            placeholder="Your username"
+            required
+            aria-describedby="username-err"
+            aria-required="true"
+            value="{{ request.form.get('username', '') if request else '' }}"
+          />
+        </div>
+        <div id="username-err" class="field-err" role="alert" aria-live="polite">
+          <span>⚠</span><span id="username-err-text"></span>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">
+          <label for="password">Password</label>
+          <a href="{{ url_for('forgot_password') }}"
+   class="label-link" id="forgotLink">Forgot password?</a>
+        </div>
+        <div class="input-wrap">
+          <span class="input-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <input
+            id="password" name="password" type="password"
+            autocomplete="current-password"
+            placeholder="Your password"
+            required
+            aria-describedby="password-err"
+            aria-required="true"
+          />
+          <button type="button" class="pwd-toggle" id="togglePwd"
+                  aria-pressed="false" aria-label="Show password">Show</button>
+        </div>
+        <div id="password-err" class="field-err" role="alert" aria-live="polite">
+          <span>⚠</span><span id="password-err-text"></span>
+        </div>
+      </div>
+
+      <!-- REMEMBER ME -->
+      <div class="extras">
+        <label class="checkbox-label" for="remember">
+          <input id="remember" name="remember" type="checkbox" />
+          Remember me
+        </label>
+      </div>
+
+      <!-- SUBMIT -->
+      <button id="submitBtn" class="btn-submit" type="submit"
+              aria-busy="false" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <span class="btn-text">Sign In</span>
+      </button>
+
+    </form>
+
+    <div class="divider">or</div>
+
+    <p class="footer-link">
+      Don't have an account? <a href="{{ url_for('register') }}">Create one →</a>
+    </p>
+
+  </main>
+
+  <script>
+  (function(){
+
+    /* ── THEME ── */
+    const root   = document.documentElement;
+    const tBtn   = document.getElementById('themeToggle');
+    const THEMES = ['default','dark','high-contrast'];
+    const ICONS  = { default:'☀️', dark:'🌙', 'high-contrast':'⚡' };
+    let current  = localStorage.getItem('tb_theme') || 'default';
+    function applyTheme(t){
+      current = t;
+      t === 'default' ? root.removeAttribute('data-theme') : root.setAttribute('data-theme', t);
+      if(tBtn) tBtn.textContent = ICONS[t];
+      localStorage.setItem('tb_theme', t);
+    }
+    applyTheme(current);
+    tBtn?.addEventListener('click', () => applyTheme(THEMES[(THEMES.indexOf(current)+1) % THEMES.length]));
+
+    /* ── REFS ── */
+    const form          = document.getElementById('loginForm');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const submitBtn     = document.getElementById('submitBtn');
+    const togglePwd     = document.getElementById('togglePwd');
+    const serverBanner  = document.getElementById('serverErrorBanner');
+    const serverErrText = document.getElementById('serverErrorText');
+    const rateHint      = document.getElementById('rateHint');
+    const rateHintText  = document.getElementById('rateHintText');
+
+    let failCount = parseInt(sessionStorage.getItem('tb_login_fails') || '0', 10);
+
+    /* ── SHOW / HIDE SERVER BANNER ── */
+    function showServerError(msg){
+      if(serverErrText) serverErrText.textContent = msg;
+      serverBanner.hidden = false;
+    }
+    function hideServerError(){ serverBanner.hidden = true; }
+
+    /* ── RATE HINT (after 3 failures) ── */
+    function updateRateHint(){
+      if(failCount >= 3){
+        rateHintText.textContent = `${failCount} failed attempt${failCount>1?'s':''} — check your credentials carefully or reset your password.`;
+        rateHint.hidden = false;
+      } else {
+        rateHint.hidden = true;
+      }
+    }
+    updateRateHint();
+
+    /* ── FIELD VALIDATION HELPERS ── */
+    function setFieldError(input, errWrapper, errTextId, msg){
+      input.classList.add('has-err');
+      input.setAttribute('aria-invalid', 'true');
+      errWrapper.classList.add('visible');
+      const t = document.getElementById(errTextId);
+      if(t) t.textContent = msg;
+    }
+    function clearFieldError(input, errWrapper){
+      input.classList.remove('has-err');
+      input.setAttribute('aria-invalid', 'false');
+      errWrapper.classList.remove('visible');
+    }
+
+    const usernameErr = document.getElementById('username-err');
+    const passwordErr = document.getElementById('password-err');
+
+    /* Clear errors on input */
+    usernameInput?.addEventListener('input', ()=>{
+      clearFieldError(usernameInput, usernameErr);
+      hideServerError();
+    });
+    passwordInput?.addEventListener('input', ()=>{
+      clearFieldError(passwordInput, passwordErr);
+      hideServerError();
+    });
+
+    /* ── CLIENT-SIDE VALIDATION ── */
+    function validate(){
+      let ok = true;
+      const u = usernameInput.value.trim();
+      const p = passwordInput.value;
+
+      if(!u){
+        setFieldError(usernameInput, usernameErr, 'username-err-text', 'Username is required.');
+        ok = false;
+      } else if(u.length < 2){
+        setFieldError(usernameInput, usernameErr, 'username-err-text', 'Username is too short.');
+        ok = false;
+      }
+
+      if(!p){
+        setFieldError(passwordInput, passwordErr, 'password-err-text', 'Password is required.');
+        ok = false;
+      } else if(p.length < 4){
+        setFieldError(passwordInput, passwordErr, 'password-err-text', 'Password must be at least 4 characters.');
+        ok = false;
+      }
+
+      if(!ok){
+        /* Focus first invalid field */
+        if(usernameInput.classList.contains('has-err')) usernameInput.focus();
+        else if(passwordInput.classList.contains('has-err')) passwordInput.focus();
+      }
+      return ok;
+    }
+
+    /* ── FORM SUBMIT ── */
+    form?.addEventListener('submit', async e => {
+      hideServerError();
+      if(!validate()){ e.preventDefault(); return; }
+
+      /* Loading state */
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.setAttribute('aria-busy', 'true');
+      const btnText = submitBtn.querySelector('.btn-text');
+      if(btnText) btnText.textContent = 'Signing in';
+
+      try {
+        const fd = new FormData(form);
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          redirect: 'follow',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        /* If server redirects on success, follow it */
+        if(res.redirected){
+          sessionStorage.setItem('tb_login_fails', '0');
+          window.location.href = res.url;
+          return;
+        }
+
+        if(res.ok){
+          /* Try to parse JSON for SPA-style responses */
+          try {
+            const data = await res.json();
+            if(data.redirect){ sessionStorage.setItem('tb_login_fails','0'); window.location.href=data.redirect; return; }
+            if(data.error){ throw new Error(data.error); }
+          } catch(jsonErr){
+            /* Not JSON — reload to let Flask handle the response */
+            window.location.reload();
+            return;
+          }
+        } else {
+          /* Extract error message */
+          let msg = 'Invalid username or password. Please try again.';
+          if(res.status === 429) msg = 'Too many attempts. Please wait a moment before trying again.';
+          if(res.status === 500) msg = 'Server error. Please try again later.';
+          try {
+            const data = await res.json();
+            if(data.error) msg = data.error;
+          } catch(err){ /* ignore */ }
+
+          failCount++;
+          sessionStorage.setItem('tb_login_fails', String(failCount));
+          updateRateHint();
+          showServerError(msg);
+
+          /* Shake the card */
+          const card = document.querySelector('.card');
+          if(card){ card.style.animation='none'; void card.offsetWidth; card.style.animation='shake .45s ease'; }
+        }
+      } catch(netErr){
+        showServerError('Network error — please check your connection and try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.setAttribute('aria-busy', 'false');
+        if(btnText) btnText.textContent = 'Sign In';
+      }
+    });
+
+    /* ── PASSWORD TOGGLE ── */
+    togglePwd?.addEventListener('click', ()=>{
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      togglePwd.textContent = isPassword ? 'Hide' : 'Show';
+      togglePwd.setAttribute('aria-pressed', String(isPassword));
+      togglePwd.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+      /* Keep focus in input */
+      passwordInput.focus();
+    });
+
+    /* ── SHAKE ANIMATION (defined in JS to keep CSS clean) ── */
+    const style = document.createElement('style');
+    style.textContent = `@keyframes shake {
+      0%,100%{transform:translateX(0);}
+      18%{transform:translateX(-7px);}
+      36%{transform:translateX(7px);}
+      54%{transform:translateX(-5px);}
+      72%{transform:translateX(5px);}
+      90%{transform:translateX(-2px);}
+    }`;
+    document.head.appendChild(style);
+
+    /* ── ENTER KEY on username moves to password ── */
+    usernameInput?.addEventListener('keydown', e=>{
+      if(e.key === 'Enter'){ e.preventDefault(); passwordInput.focus(); }
+    });
+
+  })();
+  </script>
+
+</body>
+</html>

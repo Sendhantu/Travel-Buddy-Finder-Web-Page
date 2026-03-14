@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Traveler Profile | Travel Buddy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ─── TOKENS ─── */
+    :root {
+      --bg:#f0ede8; --bg2:#e8e4de; --surface:#faf9f7; --surface2:#f2efe9;
+      --border:rgba(0,0,0,0.07); --muted:#8c8680; --text:#1a1714; --text2:#3d3a36;
+      --primary:#e8622a; --primary-light:#fde8dc; --primary-dark:#c44e1c;
+      --success:#2a7d4f; --success-light:#d4f0e2;
+      --danger:#c0392b;  --danger-light:#fde8e6;
+      --warning:#b45309; --warning-light:#fef3c7;
+      --info:#1d6fa4;    --info-light:#dbeafe;
+      --font-head:'Sora',sans-serif; --font-body:'DM Sans',sans-serif;
+      --radius-sm:8px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+      --shadow-sm:0 2px 8px rgba(0,0,0,0.06); --shadow-md:0 6px 20px rgba(0,0,0,0.09);
+      --shadow-lg:0 12px 32px rgba(0,0,0,0.12); --shadow-card:0 4px 16px rgba(0,0,0,0.07);
+      --focus-ring:0 0 0 3px rgba(232,98,42,0.3); --transition:.2s cubic-bezier(.4,0,.2,1);
+    }
+    :root[data-theme="dark"] {
+      --bg:#0e0d0b; --bg2:#161410; --surface:#1c1a17; --surface2:#242118;
+      --border:rgba(255,255,255,0.07); --muted:#7a7470; --text:#f0ede8; --text2:#c8c4be;
+      --primary:#f07540; --primary-light:rgba(240,117,64,0.15); --primary-dark:#e8622a;
+      --success:#34d399; --success-light:rgba(52,211,153,0.12);
+      --danger:#f87171;  --danger-light:rgba(248,113,113,0.12);
+      --warning:#fbbf24; --warning-light:rgba(251,191,36,0.12);
+      --info:#60a5fa;    --info-light:rgba(96,165,250,0.12);
+      --shadow-card:0 4px 16px rgba(0,0,0,0.4); --shadow-lg:0 12px 32px rgba(0,0,0,0.6);
+    }
+    :root[data-theme="high-contrast"] {
+      --bg:#000; --bg2:#000; --surface:#000; --surface2:#111;
+      --border:rgba(255,255,255,0.3); --muted:#aaa; --text:#fff; --text2:#ddd;
+      --primary:#ff0; --primary-light:#222200; --primary-dark:#ffd400;
+      --success:#0f0; --success-light:#002200; --danger:#f00; --danger-light:#220000;
+      --warning:#f90; --warning-light:#221100; --info:#0ff; --info-light:#002222;
+      --shadow-sm:none; --shadow-md:none; --shadow-lg:none; --shadow-card:none;
+      --focus-ring:0 0 0 3px #fff;
+    }
+
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    html,body { height:100%; }
+    body { font-family:var(--font-body); background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; line-height:1.5; }
+    a { color:inherit; text-decoration:none; }
+    button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
+    :focus-visible { outline:none; box-shadow:var(--focus-ring); border-radius:var(--radius-sm); }
+
+    /* ─── SKIP LINK (fixed pattern — not absolute) ─── */
+    .skip-link { position:fixed; top:-100px; left:16px; z-index:999; background:var(--primary); color:#fff; padding:10px 18px; border-radius:var(--radius-md); font-weight:700; transition:top .2s; }
+    .skip-link:focus { top:16px; }
+
+    /* ─── TOAST ─── */
+    #toast-container { position:fixed; bottom:28px; right:28px; z-index:900; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+    .toast { background:var(--surface); color:var(--text); padding:12px 18px; border-radius:var(--radius-md); box-shadow:var(--shadow-lg); font-weight:600; font-size:14px; display:flex; align-items:center; gap:10px; animation:toastIn .3s ease forwards; pointer-events:auto; border-left:4px solid var(--primary); font-family:var(--font-body); }
+    .toast.success { border-color:var(--success); }
+    .toast.danger  { border-color:var(--danger); }
+    .toast.warning { border-color:var(--warning); }
+    @keyframes toastIn  { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
+    @keyframes toastOut { from{opacity:1;}to{opacity:0;transform:translateY(12px);} }
+
+    /* ─── HEADER ─── */
+    header.header { background:var(--surface); height:66px; padding:0 28px; display:flex; justify-content:space-between; align-items:center; gap:16px; box-shadow:var(--shadow-sm); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:40; }
+    .header-left { display:flex; align-items:center; gap:12px; }
+    .brand-logo { width:36px; height:36px; border-radius:10px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .brand-name { font-family:var(--font-head); font-size:17px; font-weight:800; }
+    .brand-name span { color:var(--primary); }
+    .back-btn { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; color:var(--text2); background:var(--surface2); border:1px solid var(--border); transition:all var(--transition); }
+    .back-btn:hover { background:var(--bg2); color:var(--text); }
+    #themeToggle { width:38px; height:38px; border-radius:var(--radius-sm); background:var(--surface2); color:var(--text); display:flex; align-items:center; justify-content:center; font-size:17px; border:1px solid var(--border); transition:background var(--transition); }
+    #themeToggle:hover { background:var(--bg2); }
+
+    /* ─── PAGE ─── */
+    .page { max-width:760px; margin:0 auto; padding:32px 20px 80px; }
+
+    /* ─── FLASH MESSAGES ─── */
+    /* BUG FIX: errors use role="alert" + aria-live="assertive", not "polite" */
+    .flash { display:flex; align-items:flex-start; gap:10px; padding:13px 16px; border-radius:var(--radius-md); font-size:13.5px; font-weight:600; margin-bottom:16px; animation:cardIn .25s ease both; }
+    .flash.success { background:var(--success-light); color:var(--success); border:1px solid rgba(42,125,79,.15); }
+    .flash.error   { background:var(--danger-light);  color:var(--danger);  border:1px solid rgba(192,57,43,.15); }
+    .flash-icon { flex-shrink:0; margin-top:1px; }
+    @keyframes cardIn { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+
+    /* ─── VERIFICATION STATUS BANNER ─── */
+    .status-banner { display:flex; align-items:center; gap:14px; padding:16px 20px; border-radius:var(--radius-lg); margin-bottom:24px; border:1px solid transparent; animation:cardIn .3s ease both; }
+    .status-banner .sicon { font-size:28px; flex-shrink:0; }
+    .status-banner h3 { font-family:var(--font-head); font-size:15px; font-weight:800; margin-bottom:2px; }
+    .status-banner p  { font-size:13px; opacity:.85; }
+    .status-banner.pending  { background:var(--warning-light); color:var(--warning); border-color:rgba(180,83,9,.15); }
+    .status-banner.approved { background:var(--success-light); color:var(--success); border-color:rgba(42,125,79,.15); }
+    .status-banner.rejected { background:var(--danger-light);  color:var(--danger);  border-color:rgba(192,57,43,.15); }
+
+    /* ─── HERO ─── */
+    .page-hero { background:var(--surface); border-radius:var(--radius-xl); padding:26px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px; box-shadow:var(--shadow-card); border:1px solid var(--border); margin-bottom:24px; position:relative; overflow:hidden; animation:cardIn .25s ease both; }
+    .page-hero::before { content:''; position:absolute; right:-40px; top:-40px; width:180px; height:180px; border-radius:50%; background:radial-gradient(circle,var(--primary-light) 0%,transparent 70%); pointer-events:none; }
+    .page-hero h1 { font-family:var(--font-head); font-size:20px; font-weight:800; margin-bottom:4px; }
+    .page-hero h1 span { color:var(--primary); }
+    .page-hero p { font-size:13px; color:var(--muted); }
+    .verified-badge { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; background:var(--success-light); color:var(--success); padding:6px 14px; border-radius:999px; border:1px solid rgba(42,125,79,.2); position:relative; z-index:1; white-space:nowrap; }
+
+    /* ─── FORM CARD ─── */
+    .form-card { background:var(--surface); border-radius:var(--radius-xl); border:1px solid var(--border); box-shadow:var(--shadow-card); overflow:hidden; animation:cardIn .4s ease both; }
+
+    /* Section heads inside card */
+    .form-section { padding:24px 28px 0; }
+    .form-section:first-child { padding-top:28px; }
+    .section-label { display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+    .section-icon { width:36px; height:36px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+    .section-icon.orange { background:var(--primary-light); }
+    .section-icon.blue   { background:var(--info-light); }
+    .section-icon.green  { background:var(--success-light); }
+    .section-icon.red    { background:var(--danger-light); }
+    .section-label h2 { font-family:var(--font-head); font-size:14px; font-weight:800; }
+    .section-label p  { font-size:12px; color:var(--muted); margin-top:1px; }
+
+    /* ─── FIELD GRID ─── */
+    .form-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-bottom:24px; }
+    .col-full { grid-column:1 / -1; }
+
+    /* ─── FIELD ─── */
+    .field { display:flex; flex-direction:column; gap:6px; }
+    .field label { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+    .field label .req { color:var(--danger); margin-left:2px; }
+
+    .input-wrap { position:relative; display:flex; align-items:center; }
+    .input-icon { position:absolute; left:13px; font-size:14px; color:var(--muted); pointer-events:none; transition:color var(--transition); z-index:1; }
+    .input-wrap:focus-within .input-icon { color:var(--primary); }
+
+    input[type="text"], input[type="tel"], textarea {
+      width:100%; padding:11px 14px; border-radius:var(--radius-md);
+      border:1.5px solid var(--border); background:var(--surface2);
+      color:var(--text); font-family:var(--font-body); font-size:14px;
+      transition:border-color var(--transition),box-shadow var(--transition),background var(--transition);
+    }
+    .has-icon input, .has-icon textarea { padding-left:38px; }
+    input:focus, textarea:focus { outline:none; border-color:var(--primary); box-shadow:var(--focus-ring); background:var(--surface); }
+    input.has-err, textarea.has-err { border-color:var(--danger); box-shadow:0 0 0 3px rgba(192,57,43,.12); }
+
+    /* Readonly fields */
+    input[readonly], textarea[readonly] {
+      background:var(--bg2); color:var(--muted);
+      border-color:var(--border); cursor:not-allowed; opacity:.8;
+    }
+    input[readonly]:focus, textarea[readonly]:focus { box-shadow:none; border-color:var(--border); }
+
+    .field-hint  { font-size:12px; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
+    .char-count  { font-weight:700; }
+    .char-count.warn { color:var(--warning); }
+    .char-count.over { color:var(--danger); }
+    .field-error { font-size:12px; font-weight:700; color:var(--danger); display:none; align-items:center; gap:4px; margin-top:2px; }
+    .field-error.visible { display:flex; }
+
+    textarea { resize:vertical; min-height:100px; }
+
+    /* ─── ACTIONS BAR ─── */
+    .actions-bar { padding:20px 28px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; background:var(--surface2); }
+    .actions-note { font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+
+    .btn-submit { display:inline-flex; align-items:center; gap:8px; padding:12px 26px; border-radius:var(--radius-md); font-family:var(--font-body); font-size:14px; font-weight:800; background:var(--primary); color:#fff; box-shadow:0 4px 14px rgba(232,98,42,.3); transition:all var(--transition); }
+    .btn-submit:hover:not(:disabled) { background:var(--primary-dark); transform:translateY(-1px); box-shadow:0 6px 18px rgba(232,98,42,.4); }
+    .btn-submit:disabled { opacity:.55; cursor:not-allowed; pointer-events:none; }
+
+    /* BUG FIX: "disabled" was a CSS class — real disabled state via attribute + proper selector */
+    .btn-verified { display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border-radius:var(--radius-md); font-size:14px; font-weight:700; background:var(--success-light); color:var(--success); border:1px solid rgba(42,125,79,.2); cursor:default; }
+
+    /* Spinner */
+    .spinner { width:16px; height:16px; border:2.5px solid rgba(255,255,255,0.35); border-top-color:#fff; border-radius:50%; animation:spin 700ms linear infinite; display:none; flex-shrink:0; }
+    .btn-submit[aria-busy="true"] .spinner { display:block; }
+    .btn-submit[aria-busy="true"] .btn-label { opacity:.8; }
+    @keyframes spin { to{transform:rotate(360deg);} }
+
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+    /* ─── PROFILE AVATAR ─── */
+    .profile-avatar{
+      width:72px;height:72px;border-radius:50%;flex-shrink:0;
+      background:linear-gradient(135deg,var(--primary),#f5a623);
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--font-head);font-size:28px;font-weight:800;color:#fff;
+      border:4px solid var(--surface);
+      box-shadow:0 4px 18px rgba(232,98,42,.3);
+      position:relative;z-index:1;
+    }
+    .profile-avatar-wrap{ position:relative;flex-shrink:0; }
+    .verified-dot{
+      position:absolute;bottom:2px;right:2px;
+      width:20px;height:20px;border-radius:50%;
+      background:var(--success);border:3px solid var(--surface);
+      display:flex;align-items:center;justify-content:center;
+      font-size:10px;color:#fff;font-weight:800;
+    }
+
+    /* ─── COMPLETION BAR ─── */
+    .completion-bar-wrap{
+      background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+      padding:16px 20px;margin-bottom:20px;box-shadow:var(--shadow-card);
+      animation:cardIn .32s ease both;
+    }
+    .completion-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+    .completion-label{font-size:13px;font-weight:700;color:var(--text2);}
+    .completion-pct{font-family:var(--font-head);font-size:15px;font-weight:800;color:var(--primary);}
+    .completion-track{height:8px;border-radius:999px;background:var(--surface2);overflow:hidden;}
+    .completion-fill{
+      height:100%;border-radius:999px;
+      background:linear-gradient(90deg,var(--primary),#f5a623);
+      transition:width .8s cubic-bezier(.4,0,.2,1);
+    }
+    .completion-steps{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;}
+    .completion-step{font-size:12px;display:flex;align-items:center;gap:4px;color:var(--muted);}
+    .completion-step.done{color:var(--success);font-weight:700;}
+    .completion-step.done::before{content:'✓';}
+    .completion-step:not(.done)::before{content:'○';}
+    @media(max-width:640px) {
+      header.header { padding:0 16px; }
+      .page { padding:20px 14px 80px; }
+      .page-hero { flex-direction:column; align-items:flex-start; padding:20px; }
+      .form-grid { grid-template-columns:1fr; }
+      .col-full { grid-column:1; }
+      .form-section { padding:20px 18px 0; }
+      .actions-bar { padding:16px 18px; flex-direction:column; align-items:stretch; }
+      .btn-submit, .btn-verified { justify-content:center; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ─── HEADER ─── -->
+  <header class="header" role="banner">
+    <div class="header-left">
+      <div class="brand-logo" aria-hidden="true">🌍</div>
+      <span class="brand-name">Travel<span>Buddy</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <a href="/main" class="back-btn">← Dashboard</a>
+      <button id="themeToggle" aria-label="Toggle color theme">☀️</button>
+    </div>
+  </header>
+
+  <main id="mainContent" class="page" role="main">
+
+    <!-- ─── HERO ─── -->
+    <div class="page-hero" role="region" aria-label="Profile header">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar">
+            {% set avatar_seed = profile.full_name if profile and profile.full_name else session.get('username', 'T') %}
+            {{ (avatar_seed or 'T')[:1] | upper }}
+          </div>
+          {% if profile and profile.verification_status == 'approved' %}
+          <div class="verified-dot" title="Verified">✓</div>
+          {% endif %}
+        </div>
+        <div>
+          <h1>🧳 Traveler <span>Profile</span></h1>
+          <p>Complete your profile to get verified and start joining trips.</p>
+        </div>
+      </div>
+      {% if profile and profile.verification_status == 'approved' %}
+        <span class="verified-badge">✅ Verified Traveler</span>
+      {% endif %}
+    </div>
+
+    <!-- ─── PROFILE COMPLETION ─── -->
+    {% set filled = namespace(count=0, total=5) %}
+    {% if profile %}
+      {% if profile.full_name %}{% set filled.count = filled.count + 1 %}{% endif %}
+      {% if profile.phone %}{% set filled.count = filled.count + 1 %}{% endif %}
+      {% if profile.bio %}{% set filled.count = filled.count + 1 %}{% endif %}
+      {% if profile.address %}{% set filled.count = filled.count + 1 %}{% endif %}
+      {% if profile.id_type %}{% set filled.count = filled.count + 1 %}{% endif %}
+    {% endif %}
+    {% set pct = ((filled.count / filled.total) * 100) | int %}
+    <div class="completion-bar-wrap">
+      <div class="completion-header">
+        <span class="completion-label">Profile Completion</span>
+        <span class="completion-pct">{{ pct }}%</span>
+      </div>
+      <div class="completion-track">
+        <div class="completion-fill" style="width:{{ pct }}%"></div>
+      </div>
+      <div class="completion-steps">
+        <span class="completion-step {{ 'done' if profile and profile.full_name else '' }}">Full Name</span>
+        <span class="completion-step {{ 'done' if profile and profile.phone else '' }}">Phone</span>
+        <span class="completion-step {{ 'done' if profile and profile.bio else '' }}">Bio</span>
+        <span class="completion-step {{ 'done' if profile and profile.address else '' }}">Address</span>
+        <span class="completion-step {{ 'done' if profile and profile.id_type else '' }}">ID Type</span>
+      </div>
+    </div>
+
+    <!-- ─── FLASH MESSAGES ─── -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <!-- BUG FIX: errors use role="alert" + assertive, not polite -->
+          <div class="flash {{ 'success' if category == 'success' else 'error' }}"
+               role="{{ 'status' if category == 'success' else 'alert' }}"
+               aria-live="{{ 'polite' if category == 'success' else 'assertive' }}">
+            <span class="flash-icon">{{ '✅' if category == 'success' else '⚠️' }}</span>
+            <span>{{ msg }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- ─── VERIFICATION STATUS BANNER ─── -->
+    {% if profile %}
+      {% if profile.verification_status == 'pending' %}
+        <div class="status-banner pending" role="status" aria-live="polite">
+          <span class="sicon">⏳</span>
+          <div>
+            <h3>Under Review</h3>
+            <p>Your traveler profile has been submitted and is awaiting admin approval.</p>
+          </div>
+        </div>
+      {% elif profile.verification_status == 'approved' %}
+        <div class="status-banner approved" role="status" aria-live="polite">
+          <span class="sicon">✅</span>
+          <div>
+            <h3>Verified Traveler</h3>
+            <p>Your profile is verified. You can now join any trip on Travel Buddy.</p>
+          </div>
+        </div>
+      {% elif profile.verification_status == 'rejected' %}
+        <div class="status-banner rejected" role="alert" aria-live="assertive">
+          <span class="sicon">❌</span>
+          <div>
+            <h3>Verification Rejected</h3>
+            <p>Please review and correct your details below, then resubmit for verification.</p>
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+
+    <!-- ─── FORM CARD ─── -->
+    <!-- BUG FIX 1: added CSRF token input -->
+    <!-- BUG FIX 2: enctype added for future ID proof file upload -->
+    {# Set a single Jinja variable to avoid repeating the approved check 6 times #}
+    {% set is_locked = profile and profile.verification_status == 'approved' %}
+
+    <div class="form-card">
+      <form method="post" action="{{ url_for('traveler_profile') }}"
+            enctype="multipart/form-data" novalidate id="profileForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <!-- ── SECTION 1: PERSONAL INFO ── -->
+        <div class="form-section">
+          <div class="section-label">
+            <div class="section-icon orange">👤</div>
+            <div>
+              <h2>Personal Information</h2>
+              <p>Your legal name and contact details</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+
+            <div class="field">
+              <label for="full_name">Full Name <span class="req">*</span></label>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true">👤</span>
+                <input id="full_name" name="full_name" type="text"
+                       value="{{ profile.full_name if profile else '' }}"
+                       required maxlength="100" autocomplete="name"
+                       placeholder="Your legal full name"
+                       {% if is_locked %}readonly aria-readonly="true"{% endif %}
+                       aria-required="true" aria-describedby="full-name-err">
+              </div>
+              <div class="field-error" id="full-name-err" role="alert">⚠ Full name is required.</div>
+              {% if errors and errors.get('full_name') %}
+                <div class="field-error visible" role="alert">⚠ {{ errors.get('full_name') }}</div>
+              {% endif %}
+            </div>
+
+            <div class="field">
+              <label for="phone">Phone Number <span class="req">*</span></label>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true">📞</span>
+                <input id="phone" name="phone" type="tel"
+                       value="{{ profile.phone if profile else '' }}"
+                       required autocomplete="tel"
+                       placeholder="+91 98765 43210"
+                       {% if is_locked %}readonly aria-readonly="true"{% endif %}
+                       aria-required="true" aria-describedby="phone-hint phone-err">
+              </div>
+              <div class="field-hint" id="phone-hint">Include country code if outside India</div>
+              <div class="field-error" id="phone-err" role="alert">⚠ Enter a valid phone number.</div>
+              {% if errors and errors.get('phone') %}
+                <div class="field-error visible" role="alert">⚠ {{ errors.get('phone') }}</div>
+              {% endif %}
+            </div>
+
+            <div class="field">
+              <label for="emergency_contact">Emergency Contact <span class="req">*</span></label>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true">🚨</span>
+                <input id="emergency_contact" name="emergency_contact" type="tel"
+                       value="{{ profile.emergency_contact if profile else '' }}"
+                       required autocomplete="tel"
+                       placeholder="Emergency contact number"
+                       {% if is_locked %}readonly aria-readonly="true"{% endif %}
+                       aria-required="true" aria-describedby="ec-err">
+              </div>
+              <div class="field-error" id="ec-err" role="alert">⚠ Emergency contact is required.</div>
+              {% if errors and errors.get('emergency_contact') %}
+                <div class="field-error visible" role="alert">⚠ {{ errors.get('emergency_contact') }}</div>
+              {% endif %}
+            </div>
+
+            <div class="field">
+              <label for="languages">Languages Spoken</label>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true">🗣️</span>
+                <input id="languages" name="languages" type="text"
+                       value="{{ profile.languages if profile else '' }}"
+                       maxlength="200" placeholder="e.g. English, Tamil, Hindi"
+                       {% if is_locked %}readonly aria-readonly="true"{% endif %}>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── SECTION 2: IDENTITY VERIFICATION ── -->
+        <div class="form-section">
+          <div class="section-label">
+            <div class="section-icon blue">🪪</div>
+            <div>
+              <h2>Identity Verification</h2>
+              <p>Government-issued ID for traveler verification</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field col-full">
+              <label for="id_proof">Government ID Reference <span class="req">*</span></label>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true">🪪</span>
+                <input id="id_proof" name="id_proof" type="text"
+                       value="{{ profile.id_proof if profile else '' }}"
+                       required maxlength="120"
+                       placeholder="Aadhaar / Passport / Driving License number"
+                       {% if is_locked %}readonly aria-readonly="true"{% endif %}
+                       aria-required="true" aria-describedby="id-proof-hint id-proof-err">
+              </div>
+              <div class="field-hint" id="id-proof-hint">Enter the document number — e.g. Aadhaar 1234 5678 9012</div>
+              <div class="field-error" id="id-proof-err" role="alert">⚠ ID proof reference is required.</div>
+              {% if errors and errors.get('id_proof') %}
+                <div class="field-error visible" role="alert">⚠ {{ errors.get('id_proof') }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 3: MEDICAL NOTES ── -->
+        <div class="form-section" style="padding-bottom:0;">
+          <div class="section-label">
+            <div class="section-icon red">🏥</div>
+            <div>
+              <h2>Medical Notes</h2>
+              <p>Shared with trip hosts for safety purposes — optional</p>
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-bottom:28px;">
+            <div class="field col-full">
+              <label for="medical_notes">Medical Notes</label>
+              <textarea id="medical_notes" name="medical_notes"
+                        maxlength="2000"
+                        placeholder="Allergies, medical conditions, medications — or leave blank"
+                        {% if is_locked %}readonly aria-readonly="true"{% endif %}
+                        aria-describedby="med-hint">{{ profile.medical_notes if profile else '' }}</textarea>
+              <div class="field-hint" id="med-hint">
+                <span>This information is kept private and shared only with your trip host</span>
+                <span class="char-count" id="medCount" aria-live="polite">0 / 2000</span>
+              </div>
+              {% if errors and errors.get('medical_notes') %}
+                <div class="field-error visible" role="alert">⚠ {{ errors.get('medical_notes') }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ACTIONS BAR ── -->
+        <div class="actions-bar" role="group" aria-label="Form actions">
+          <p class="actions-note">
+            🔒 Verification is mandatory before joining any trip
+          </p>
+          <div>
+            {% if not is_locked %}
+              <!-- BUG FIX: real <button type="submit"> with proper disabled attribute styling -->
+              <button type="submit" id="submitBtn" class="btn-submit"
+                      aria-busy="false" aria-live="polite">
+                <div class="spinner" aria-hidden="true"></div>
+                <span class="btn-label">
+                  {% if profile and profile.verification_status == 'rejected' %}
+                    🔄 Resubmit for Verification
+                  {% else %}
+                    🚀 Submit for Verification
+                  {% endif %}
+                </span>
+              </button>
+            {% else %}
+              <!-- BUG FIX: this is a <div>, not a <button> — no form submit risk -->
+              <div class="btn-verified" aria-label="Profile is verified">
+                ✅ Verified — no changes needed
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+  </main>
+
+  <script>
+  (function(){
+
+    /* ── THEME ── */
+    const root=document.documentElement, tBtn=document.getElementById('themeToggle');
+    const THEMES=['default','dark','high-contrast'], ICONS={default:'☀️',dark:'🌙','high-contrast':'⚡'};
+    let current=localStorage.getItem('tb_theme')||'default';
+    function applyTheme(t){ current=t; t==='default'?root.removeAttribute('data-theme'):root.setAttribute('data-theme',t); if(tBtn)tBtn.textContent=ICONS[t]; localStorage.setItem('tb_theme',t); }
+    applyTheme(current);
+    tBtn?.addEventListener('click',()=>applyTheme(THEMES[(THEMES.indexOf(current)+1)%THEMES.length]));
+
+    /* ── TOAST ── */
+    function toast(msg,type='info',ms=3200){
+      const c=document.getElementById('toast-container'); if(!c)return;
+      const icons={info:'ℹ️',success:'✅',danger:'❌',warning:'⚠️'};
+      const el=document.createElement('div'); el.className=`toast ${type}`;
+      el.innerHTML=`<span>${icons[type]}</span><span>${msg}</span>`;
+      c.appendChild(el);
+      setTimeout(()=>{ el.style.animation='toastOut .3s ease forwards'; setTimeout(()=>el.remove(),300); },ms);
+    }
+
+    /* ── REFS ── */
+    const form    = document.getElementById('profileForm');
+    const medEl   = document.getElementById('medical_notes');
+    const medCount= document.getElementById('medCount');
+    const submitBtn=document.getElementById('submitBtn');
+
+    /* ── CHAR COUNTER ── */
+    function updateMedCount(){
+      if(!medEl||!medCount) return;
+      const len=medEl.value.length, max=parseInt(medEl.maxLength);
+      medCount.textContent=`${len} / ${max}`;
+      medCount.className='char-count'+(len>max*.9?' warn':'')+(len>=max?' over':'');
+    }
+    updateMedCount();
+    medEl?.addEventListener('input',updateMedCount);
+
+    /* ── FIELD ERROR HELPERS ── */
+    function setErr(inputId, errId, show){
+      const inp=document.getElementById(inputId);
+      const err=document.getElementById(errId);
+      if(inp) inp.classList.toggle('has-err',show);
+      if(err) err.classList.toggle('visible',show);
+    }
+    function clearErrOnInput(inputId, errId){
+      const inp=document.getElementById(inputId);
+      inp?.addEventListener('input',()=>setErr(inputId,errId,false));
+    }
+    clearErrOnInput('full_name','full-name-err');
+    clearErrOnInput('phone','phone-err');
+    clearErrOnInput('emergency_contact','ec-err');
+    clearErrOnInput('id_proof','id-proof-err');
+
+    /* ── CLIENT-SIDE VALIDATION ── */
+    const PHONE_RE=/^\+?[0-9\s\-]{7,20}$/;
+    function validate(){
+      let ok=true;
+      const fn=document.getElementById('full_name')?.value.trim()||'';
+      const ph=document.getElementById('phone')?.value.trim()||'';
+      const ec=document.getElementById('emergency_contact')?.value.trim()||'';
+      const id=document.getElementById('id_proof')?.value.trim()||'';
+      if(!fn){ setErr('full_name','full-name-err',true); ok=false; }
+      if(!ph||!PHONE_RE.test(ph)){ setErr('phone','phone-err',true); ok=false; }
+      if(!ec||!PHONE_RE.test(ec)){ setErr('emergency_contact','ec-err',true); ok=false; }
+      if(!id){ setErr('id_proof','id-proof-err',true); ok=false; }
+      if(!ok){
+        /* focus first invalid */
+        document.querySelector('.has-err')?.focus();
+      }
+      return ok;
+    }
+
+    /* ── FORM SUBMIT ── */
+    form?.addEventListener('submit',e=>{
+      if(!validate()){ e.preventDefault(); return; }
+      if(submitBtn){
+        submitBtn.setAttribute('aria-busy','true');
+        submitBtn.disabled=true;
+        const lbl=submitBtn.querySelector('.btn-label');
+        if(lbl) lbl.textContent='Submitting…';
+      }
+    });
+
+    /* ── AUTO-SHOW TOAST for server-flashed messages ── */
+    /* Reads existing .flash elements already rendered by Jinja and mirrors them to toasts */
+    document.querySelectorAll('.flash').forEach(el=>{
+      const isSuccess=el.classList.contains('success');
+      const text=el.querySelector('span:last-child')?.textContent?.trim();
+      if(text) toast(text, isSuccess?'success':'danger', 5000);
+    });
+
+  })();
+  </script>
+
+</body>
+</html>

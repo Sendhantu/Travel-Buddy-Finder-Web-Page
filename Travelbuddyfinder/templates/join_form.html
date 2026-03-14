@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Join Trip | Travel Buddy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --sand:          #f5efe6;
+      --sand-2:        #ede4d8;
+      --sand-3:        #d8c9b6;
+      --terracotta:    #c26a45;
+      --terra-dark:    #a3512f;
+      --terra-light:   #e89070;
+      --ocean:         #2a6478;
+      --ocean-light:   #4a8fa8;
+      --ocean-dark:    #1d4f61;
+      --ink:           #1c1410;
+      --ink-2:         #5c4a3d;
+      --ink-3:         #9c8878;
+      --white:         #fdfaf7;
+      --err-bg:        #fef2ee;
+      --err-border:    #e4a090;
+      --err-text:      #8b3a22;
+      --ok-bg:         #eef6f0;
+      --ok-border:     #88c49a;
+      --ok-text:       #2a6b3e;
+      --warn-bg:       #fffbeb;
+      --warn-border:   #fcd34d;
+      --warn-text:     #92400e;
+      --bg:            var(--sand);
+      --surface:       var(--white);
+      --surface-2:     var(--sand);
+      --border:        var(--sand-3);
+      --text:          var(--ink);
+      --text-2:        var(--ink-2);
+      --muted:         var(--ink-3);
+      --primary:       var(--terracotta);
+      --primary-dark:  var(--terra-dark);
+      --primary-light: #fdf0ea;
+      --radius-sm:     8px;
+      --radius-md:     13px;
+      --radius-lg:     18px;
+      --radius-xl:     24px;
+      --shadow-sm:     0 2px 10px rgba(28,20,16,0.07);
+      --shadow-md:     0 6px 22px rgba(28,20,16,0.10);
+      --shadow-lg:     0 16px 52px rgba(28,20,16,0.15);
+      --shadow-card:   0 4px 18px rgba(28,20,16,0.08);
+      --focus-ring:    0 0 0 3px rgba(194,106,69,0.28);
+      --transition:    .2s cubic-bezier(.4,0,.2,1);
+    }
+
+    [data-theme="dark"] {
+      --bg:          #0f0d0b;
+      --surface:     #1c1916;
+      --surface-2:   #252017;
+      --border:      rgba(255,255,255,0.09);
+      --text:        #f0ece5;
+      --text-2:      #c4bdb4;
+      --muted:       #7a7068;
+      --primary:     #d97c52;
+      --primary-dark:#c26a45;
+      --primary-light:rgba(217,124,82,0.15);
+      --err-bg:      rgba(194,106,69,0.12);
+      --err-border:  rgba(194,106,69,0.35);
+      --err-text:    #e8956e;
+      --ok-bg:       rgba(42,107,62,0.15);
+      --ok-border:   rgba(42,107,62,0.4);
+      --ok-text:     #6dbb8a;
+      --sand-3:      rgba(255,255,255,0.09);
+      --shadow-lg:   0 16px 52px rgba(0,0,0,0.55);
+      --shadow-card: 0 4px 18px rgba(0,0,0,0.35);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background var(--transition), color var(--transition);
+    }
+    a { color: inherit; text-decoration: none; }
+    :focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+
+    /* Noise texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ══════════════════════════════
+       SKIP LINK
+    ══════════════════════════════ */
+    .skip-link {
+      position: fixed; top: -100px; left: 16px; z-index: 999;
+      background: var(--primary); color: #fff;
+      padding: 10px 18px; border-radius: var(--radius-md);
+      font-weight: 700; transition: top .2s;
+    }
+    .skip-link:focus { top: 16px; }
+
+    /* ══════════════════════════════
+       HEADER
+    ══════════════════════════════ */
+    .header {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--ocean-dark);
+      height: 62px; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      box-shadow: 0 2px 18px rgba(29,79,97,0.35);
+      flex-shrink: 0;
+    }
+    .header::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--ocean-light), var(--terracotta), var(--terra-light));
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .brand-logo {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: var(--terracotta);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .brand-name {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 17px; font-weight: 700; color: #fff;
+    }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+
+    .hdr-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 13px; border-radius: 100px;
+      font-size: 13px; font-weight: 600; color: #fff;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.18);
+      transition: background var(--transition);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .hdr-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* ══════════════════════════════
+       SUCCESS OVERLAY
+    ══════════════════════════════ */
+    .success-overlay {
+      position: fixed; inset: 0; z-index: 800;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .success-overlay.hidden { display: none; }
+
+    .success-box {
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      padding: 44px 36px;
+      max-width: 440px; width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+      animation: pop-in .4s cubic-bezier(.2,1.4,.4,1) both;
+    }
+    @keyframes pop-in {
+      from { opacity: 0; transform: scale(.86); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .success-icon {
+      width: 76px; height: 76px; border-radius: 50%;
+      background: var(--ok-bg); border: 2px solid var(--ok-border);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 22px; font-size: 34px;
+      animation: icon-bounce .5s .15s cubic-bezier(.2,1.4,.4,1) both;
+    }
+    @keyframes icon-bounce {
+      from { opacity: 0; transform: scale(.4); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .success-box h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 24px; font-weight: 700;
+      margin-bottom: 10px; color: var(--text);
+    }
+    .success-box p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 22px; }
+
+    .success-trip-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--primary-light); color: var(--primary);
+      font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 700;
+      padding: 8px 18px; border-radius: 999px;
+      border: 1px solid rgba(194,106,69,0.2);
+      margin-bottom: 26px;
+    }
+
+    .success-actions { display: flex; flex-direction: column; gap: 10px; }
+
+    /* ══════════════════════════════
+       PAGE LAYOUT
+    ══════════════════════════════ */
+    .page-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      max-width: 1060px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 36px 24px 80px;
+      align-items: start;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ══════════════════════════════
+       LEFT PANEL
+    ══════════════════════════════ */
+    .trip-panel {
+      position: sticky; top: 94px;
+      display: flex; flex-direction: column; gap: 16px;
+      animation: slide-left .45s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes slide-left {
+      from { opacity: 0; transform: translateX(-24px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Destination hero card */
+    .dest-card {
+      background: linear-gradient(140deg, var(--ocean-dark), var(--ocean));
+      border-radius: var(--radius-xl);
+      padding: 30px 28px;
+      color: #fff; position: relative; overflow: hidden;
+      box-shadow: 0 8px 32px rgba(29,79,97,0.4);
+    }
+    .dest-card::before {
+      content: ''; position: absolute; right: -60px; top: -60px;
+      width: 240px; height: 240px; border-radius: 50%;
+      background: rgba(255,255,255,0.06); pointer-events: none;
+    }
+    .dest-card::after {
+      content: ''; position: absolute; left: -40px; bottom: -70px;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: rgba(194,106,69,0.12); pointer-events: none;
+    }
+    .dest-emoji { font-size: 42px; display: block; margin-bottom: 14px; position: relative; z-index: 1; }
+    .dest-card h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px; font-weight: 700;
+      margin-bottom: 4px; position: relative; z-index: 1; line-height: 1.25;
+    }
+    .dest-card .sub { font-size: 13px; opacity: .75; position: relative; z-index: 1; margin-bottom: 20px; }
+    .dest-price {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+      padding: 9px 18px; border-radius: 999px;
+      font-family: 'Sora', sans-serif; font-size: 17px; font-weight: 800;
+      position: relative; z-index: 1;
+    }
+    .dest-price .per { font-size: 12px; opacity: .7; font-weight: 500; }
+
+    /* Detail pills */
+    .detail-pills { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .detail-pill {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 14px 15px;
+      display: flex; align-items: center; gap: 11px;
+      box-shadow: var(--shadow-card);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .detail-pill:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .dp-icon {
+      width: 38px; height: 38px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .dp-icon.o { background: var(--primary-light); }
+    .dp-icon.g { background: var(--ok-bg); }
+    .dp-icon.b { background: rgba(74,143,168,0.12); }
+    .dp-icon.y { background: var(--warn-bg); }
+    .dp-label { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 2px; }
+    .dp-val   { font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700; color: var(--text); }
+
+    /* Steps card */
+    .steps-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px;
+      box-shadow: var(--shadow-card);
+    }
+    .steps-card-head { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); margin-bottom: 16px; }
+    .step-item { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 12px; }
+    .step-item:last-child { margin-bottom: 0; }
+    .step-num {
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+      background: var(--primary-light); color: var(--primary);
+      font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-text { font-size: 13px; color: var(--text-2); line-height: 1.55; }
+    .step-text strong { color: var(--text); font-weight: 600; }
+    .rating-summary {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin-bottom: 12px; padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius-md); background: var(--surface-2);
+    }
+    .rating-value {
+      font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 800; color: var(--text);
+    }
+    .rating-sub {
+      font-size: 12px; color: var(--muted); font-weight: 600;
+    }
+    .review-item {
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .review-item:last-of-type { border-bottom: 0; }
+    .review-head {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;
+      font-size: 12px;
+    }
+    .review-name { font-weight: 700; color: var(--text); }
+    .review-time { margin-left: auto; color: var(--muted); font-size: 11px; }
+    .review-stars { color: #f59e0b; letter-spacing: 1px; font-size: 12px; }
+    .review-text { font-size: 12.5px; color: var(--text-2); line-height: 1.5; }
+    .host-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ══════════════════════════════
+       RIGHT PANEL
+    ══════════════════════════════ */
+    .form-panel {
+      animation: slide-right .45s .1s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes slide-right {
+      from { opacity: 0; transform: translateX(24px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .form-card {
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+
+    /* Stripe */
+    .form-stripe {
+      height: 5px;
+      background: linear-gradient(90deg, var(--ocean) 0%, var(--ocean-light) 40%, var(--terracotta) 70%, var(--terra-light) 100%);
+    }
+
+    /* Form header */
+    .form-head { padding: 24px 28px 18px; border-bottom: 1px solid var(--border); }
+    .form-head h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 20px; font-weight: 700; margin-bottom: 4px; color: var(--text);
+    }
+    .form-head h2 span { color: var(--primary); }
+    .form-head p { font-size: 13px; color: var(--muted); }
+
+    /* Section */
+    .form-section { padding: 22px 28px 0; }
+    .sec-head { display: flex; align-items: center; gap: 9px; margin-bottom: 18px; }
+    .sec-icon {
+      width: 32px; height: 32px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+    }
+    .sec-icon.a { background: var(--primary-light); }
+    .sec-icon.b { background: rgba(74,143,168,0.12); }
+    .sec-title { font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 700; color: var(--text); }
+
+    /* Global error alert */
+    .form-alert {
+      display: none; align-items: flex-start; gap: 9px;
+      margin: 0 28px 16px;
+      padding: 11px 14px; border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 600; line-height: 1.45;
+      background: var(--err-bg); color: var(--err-text);
+      border: 1.5px solid var(--err-border);
+    }
+    .form-alert.visible { display: flex; }
+
+    /* Field grid */
+    .fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .f-full { grid-column: 1 / -1; }
+
+    /* Field */
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label {
+      font-size: 11.5px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .55px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .req { color: var(--err-text); font-size: 13px; }
+
+    .iw { position: relative; display: flex; align-items: center; }
+    .iw.top { align-items: flex-start; }
+    .iw .ico {
+      position: absolute; left: 12px;
+      font-size: 13px; color: var(--muted);
+      pointer-events: none; z-index: 1;
+      transition: color var(--transition);
+    }
+    .iw.top .ico { top: 11px; }
+    .iw:focus-within .ico { color: var(--primary); }
+
+    input[type="text"],
+    input[type="tel"],
+    textarea {
+      width: 100%; padding: 10px 13px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border);
+      background: var(--surface-2); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+    .iw.has-icon input,
+    .iw.has-icon textarea { padding-left: 34px; }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: var(--focus-ring);
+      background: var(--surface);
+    }
+    input.err, textarea.err {
+      border-color: var(--err-border);
+      box-shadow: 0 0 0 3px rgba(194,106,69,0.12);
+    }
+    textarea { resize: vertical; min-height: 82px; }
+
+    .ferr {
+      display: none; align-items: center; gap: 4px;
+      font-size: 11.5px; font-weight: 600; color: var(--err-text);
+    }
+    .ferr.show { display: flex; }
+    .fhint { font-size: 11.5px; color: var(--muted); }
+
+    /* Divider */
+    .fdiv { height: 1px; background: var(--border); margin: 22px 28px; }
+
+    /* Payment summary */
+    .pay-row {
+      margin: 0 28px 22px;
+      background: var(--surface-2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      transition: all var(--transition);
+    }
+    .pay-row:hover { border-color: var(--ocean-light); background: rgba(74,143,168,0.06); }
+    .pay-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .55px; margin-bottom: 3px; }
+    .pay-amount { font-family: 'Sora', sans-serif; font-size: 26px; font-weight: 800; color: var(--ok-text); line-height: 1; }
+    .pay-note { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+    .pay-icon {
+      width: 48px; height: 48px; border-radius: var(--radius-md);
+      background: var(--ok-bg); border: 1px solid var(--ok-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+
+    /* Submit area */
+    .submit-area { padding: 0 28px 28px; }
+
+    .submit-btn {
+      width: 100%; padding: 14px 20px;
+      border-radius: var(--radius-md);
+      font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      box-shadow: 0 4px 18px rgba(194,106,69,0.38);
+      transition: all var(--transition);
+      position: relative; overflow: hidden;
+    }
+    .submit-btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    }
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(194,106,69,0.45);
+    }
+    .submit-btn:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 3px 12px rgba(194,106,69,0.3);
+    }
+    .submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+    .spinner {
+      width: 17px; height: 17px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin 650ms linear infinite;
+      display: none; flex-shrink: 0;
+    }
+    .submit-btn[aria-busy="true"] .spinner { display: block; }
+    .submit-btn[aria-busy="true"] .blabel  { opacity: .8; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .policy {
+      font-size: 11.5px; color: var(--muted);
+      text-align: center; margin-top: 12px; line-height: 1.65;
+    }
+
+    /* ══════════════════════════════
+       BUTTONS (shared)
+    ══════════════════════════════ */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 12px 22px; border-radius: var(--radius-md);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+      cursor: pointer; text-decoration: none; border: 1.5px solid transparent;
+      transition: all var(--transition);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff; box-shadow: 0 4px 16px rgba(194,106,69,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(194,106,69,0.45); filter: brightness(1.04); }
+    .btn-ghost {
+      background: var(--surface-2); color: var(--text-2);
+      border-color: var(--border);
+    }
+    .btn-ghost:hover { background: var(--sand-2); color: var(--text); }
+
+    /* ══════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════ */
+    @media (max-width: 840px) {
+      .page-body { grid-template-columns: 1fr; gap: 24px; padding: 24px 16px 72px; }
+      .trip-panel { position: static; }
+      .detail-pills { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 500px) {
+      .detail-pills { grid-template-columns: 1fr; }
+      .form-head, .form-section { padding-left: 18px; padding-right: 18px; }
+      .fdiv { margin-left: 18px; margin-right: 18px; }
+      .pay-row { margin-left: 18px; margin-right: 18px; }
+      .submit-area { padding-left: 18px; padding-right: 18px; }
+      .form-alert { margin-left: 18px; margin-right: 18px; }
+      .fgrid { grid-template-columns: 1fr; }
+      .f-full { grid-column: 1; }
+    }
+
+    /* SR only */
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+  <!-- ══ SUCCESS OVERLAY ══ -->
+  <!--
+    FIX: Focus trap added; first focusable element is the heading via tabindex="-1"
+    FIX: Escape key and backdrop click dismiss correctly
+  -->
+  <div
+    class="success-overlay hidden"
+    id="successOverlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="successTitle"
+    aria-describedby="successDesc"
+  >
+    <div class="success-box">
+      <div class="success-icon" aria-hidden="true">✅</div>
+      <!-- FIX: heading gets tabindex="-1" so it can receive programmatic focus -->
+      <h2 id="successTitle" tabindex="-1">You're In! 🎉</h2>
+      <p id="successDesc">Your join request has been sent to the trip host. They'll review it and confirm your spot soon — typically within 24 hours.</p>
+      <div class="success-trip-pill">
+        🧳 <span id="successDest">{{ destination if destination else 'Trip' }}</span>
+        &nbsp;·&nbsp; ₹<span id="successPrice">{{ price }}</span>
+      </div>
+      <div class="success-actions">
+        <a href="/main" class="btn btn-primary">🏠 Back to Travel Plans</a>
+        <!--
+          FIX: "javascript:history.back()" replaced with real button using onclick
+          — avoids CSP violations and empty-history edge cases
+        -->
+        <button type="button" class="btn btn-ghost" id="overlayBackBtn">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          View Trip Details
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ HEADER ══ -->
+  <header class="header" role="banner">
+    <div class="header-left">
+      <div class="brand-logo" aria-hidden="true">🌍</div>
+      <span class="brand-name">Travel Buddy</span>
+    </div>
+    <div class="header-right">
+      <!--
+        FIX: "javascript:history.back()" replaced with proper button
+      -->
+      <button type="button" class="hdr-btn" id="backBtn" aria-label="Go back to trip details">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+          <path d="M8.5 2L4 6.5l4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Back to Trip
+      </button>
+      <button
+        id="themeToggle"
+        class="hdr-btn"
+        aria-label="Toggle color theme"
+        aria-pressed="false"
+      >☀️</button>
+    </div>
+  </header>
+
+  <!-- ══ PAGE ══ -->
+  <div class="page-body">
+
+    <!-- ── LEFT: TRIP INFO ── -->
+    <aside class="trip-panel" aria-label="Trip information">
+
+      <div class="dest-card" role="region" aria-label="Trip overview">
+        <span class="dest-emoji" aria-hidden="true">🏕️</span>
+        <h2>{{ destination if destination else 'Amazing Trip' }}</h2>
+        <p class="sub">Organised by <strong>{{ host_name if host_name else 'your host' }}</strong></p>
+        <div class="dest-price">
+          💰 ₹{{ price }}
+          <span class="per">per person</span>
+        </div>
+      </div>
+
+      <div class="detail-pills" role="list" aria-label="Trip details">
+        <div class="detail-pill" role="listitem">
+          <div class="dp-icon o" aria-hidden="true">📅</div>
+          <div>
+            <div class="dp-label">Travel Date</div>
+            <div class="dp-val">{{ travel_date if travel_date else 'TBA' }}</div>
+          </div>
+        </div>
+        <div class="detail-pill" role="listitem">
+          <div class="dp-icon g" aria-hidden="true">🌙</div>
+          <div>
+            <div class="dp-label">Duration</div>
+            <div class="dp-val">{{ duration if duration else '?' }} days</div>
+          </div>
+        </div>
+        <div class="detail-pill" role="listitem">
+          <div class="dp-icon b" aria-hidden="true">👥</div>
+          <div>
+            <div class="dp-label">Spots Left</div>
+            <div class="dp-val">{{ spots_left if spots_left else '?' }}</div>
+          </div>
+        </div>
+        <div class="detail-pill" role="listitem">
+          <div class="dp-icon y" aria-hidden="true">📍</div>
+          <div>
+            <div class="dp-label">Starts From</div>
+            <div class="dp-val">{{ start_location if start_location else 'TBA' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="steps-card" role="region" aria-label="What happens next">
+        <p class="steps-card-head">What happens next</p>
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <p class="step-text"><strong>Submit your request</strong> — fill in the form and hit send.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <p class="step-text"><strong>Host reviews</strong> — they'll approve or message you within 24 hours.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <p class="step-text"><strong>Pay on confirmation</strong> — payment is only collected after approval.</p>
+        </div>
+      </div>
+
+      <div class="steps-card" role="region" aria-label="Host reviews summary">
+        <p class="steps-card-head">Host Reviews</p>
+
+        <div class="rating-summary">
+          <div>
+            {% if host_avg_rating is not none %}
+              <div class="rating-value">{{ "%.1f"|format(host_avg_rating) }} / 5</div>
+              <div class="rating-sub">{{ host_reviews_count }} traveler review{{ '' if host_reviews_count == 1 else 's' }}</div>
+            {% else %}
+              <div class="rating-value" style="font-size:16px;">No ratings yet</div>
+              <div class="rating-sub">This host has not been reviewed yet.</div>
+            {% endif %}
+          </div>
+          <div aria-hidden="true" style="font-size:22px;">⭐</div>
+        </div>
+
+        {% if host_review_samples %}
+          {% for rv in host_review_samples %}
+          <div class="review-item">
+            <div class="review-head">
+              <span class="review-name">{{ rv.reviewer_name }}</span>
+              <span class="review-stars">
+                {% for i in range(1, 6) %}{{ '★' if i <= rv.rating else '☆' }}{% endfor %}
+              </span>
+              <span class="review-time">{{ rv.created_at }}</span>
+            </div>
+            <div class="review-text">{{ rv.comment or 'No comment provided.' }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="step-text">No written host reviews yet.</p>
+        {% endif %}
+
+        <div class="host-actions">
+          <a href="{{ url_for('private_chat', user_id=host_id) }}" class="btn btn-ghost">💬 Message Host</a>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ── RIGHT: FORM ── -->
+    <main id="mainContent" class="form-panel" role="main">
+      <div class="form-card">
+        <div class="form-stripe"></div>
+
+        <div class="form-head">
+          <h2>Join <span>This Trip</span> 🧳</h2>
+          <p>Share your details — the host will review and confirm your spot.</p>
+        </div>
+
+        <!-- Global error alert -->
+        <div
+          class="form-alert"
+          id="formAlert"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          <span aria-hidden="true">⚠️</span>
+          <span id="formAlertText"></span>
+        </div>
+
+        <form
+          id="joinForm"
+          method="POST"
+          action="{{ url_for('join_trip', post_id=post_id) }}"
+          novalidate
+          autocomplete="on"
+        >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="post_id"    value="{{ post_id }}">
+
+
+          <div class="form-section">
+            <div class="sec-head">
+              <div class="sec-icon a" aria-hidden="true">👤</div>
+              <span class="sec-title">Personal Details</span>
+            </div>
+            <div class="fgrid">
+
+              <div class="field f-full">
+                <label for="member_name">
+                  Full Name <span class="req" aria-hidden="true">*</span>
+                </label>
+                <div class="iw has-icon">
+                  <span class="ico" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <circle cx="7" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/>
+                      <path d="M2 12c0-2.2 2.24-4 5-4s5 1.8 5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                    </svg>
+                  </span>
+                  <input
+                    id="member_name" name="member_name" type="text"
+                    required aria-required="true" aria-describedby="name-err"
+                    maxlength="100" autocomplete="name"
+                    placeholder="Your legal full name"
+                    value="{{ request.form.get('member_name','') }}"
+                  />
+                </div>
+                <div class="ferr" id="name-err" role="alert">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="8.5" r=".6" fill="currentColor"/></svg>
+                  Full name is required.
+                </div>
+              </div>
+
+              <!--
+                FIX: Phone regex tightened; maxlength added
+              -->
+              <div class="field">
+                <label for="contact_no">
+                  Phone <span class="req" aria-hidden="true">*</span>
+                </label>
+                <div class="iw has-icon">
+                  <span class="ico" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M2.5 1.5h3l1.3 3L5.5 6s.8 1.8 2.5 2.5l1.5-1.3 3 1.3v3S11 13 8.5 11.5C4 9 1 5 1.5 2l1-.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                  <input
+                    id="contact_no" name="contact_no" type="tel"
+                    required aria-required="true"
+                    aria-describedby="contact-hint contact-err"
+                    autocomplete="tel" inputmode="tel"
+                    maxlength="20"
+                    placeholder="+91 98765 43210"
+                    value="{{ request.form.get('contact_no','') }}"
+                  />
+                </div>
+                <div class="fhint" id="contact-hint">Include country code</div>
+                <div class="ferr" id="contact-err" role="alert">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="8.5" r=".6" fill="currentColor"/></svg>
+                  Enter a valid phone number.
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="language">
+                  Languages Spoken <span class="req" aria-hidden="true">*</span>
+                </label>
+                <div class="iw has-icon">
+                  <span class="ico" aria-hidden="true">🗣️</span>
+                  <input
+                    id="language" name="language" type="text"
+                    required aria-required="true" aria-describedby="lang-err"
+                    maxlength="200"
+                    placeholder="e.g. English, Hindi…"
+                    value="{{ request.form.get('language','') }}"
+                  />
+                </div>
+                <div class="ferr" id="lang-err" role="alert">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="8.5" r=".6" fill="currentColor"/></svg>
+                  At least one language is required.
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="fdiv" aria-hidden="true"></div>
+
+          <!-- ── SECTION 2: LOCATION ── -->
+          <div class="form-section">
+            <div class="sec-head">
+              <div class="sec-icon b" aria-hidden="true">🏠</div>
+              <span class="sec-title">Your Location</span>
+            </div>
+            <div class="fgrid">
+              <div class="field f-full">
+                <label for="address">
+                  Address <span class="req" aria-hidden="true">*</span>
+                </label>
+                <div class="iw top has-icon">
+                  <span class="ico" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M7 1C4.79 1 3 2.79 3 5c0 3.25 4 8 4 8s4-4.75 4-8c0-2.21-1.79-4-4-4z" stroke="currentColor" stroke-width="1.4"/>
+                      <circle cx="7" cy="5" r="1.5" stroke="currentColor" stroke-width="1.2"/>
+                    </svg>
+                  </span>
+                  <textarea
+                    id="address" name="address" rows="3"
+                    required aria-required="true" aria-describedby="addr-err"
+                    maxlength="500"
+                    placeholder="Your current address…"
+                  >{{ request.form.get('address','') }}</textarea>
+                </div>
+                <div class="ferr" id="addr-err" role="alert">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="8.5" r=".6" fill="currentColor"/></svg>
+                  Address is required.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fdiv" aria-hidden="true"></div>
+
+          <!-- ── PAYMENT SUMMARY ── -->
+          <div class="pay-row" role="region" aria-label="Payment summary">
+            <div>
+              <div class="pay-label">Amount Payable</div>
+              <div class="pay-amount">₹{{ price }}</div>
+              <div class="pay-note">Collected directly by host after approval</div>
+            </div>
+            <div class="pay-icon" aria-hidden="true">💳</div>
+          </div>
+
+          <!-- ── SUBMIT ── -->
+          <div class="submit-area">
+            <button
+              type="submit"
+              id="submitBtn"
+              class="submit-btn"
+              aria-busy="false"
+            >
+              <div class="spinner" aria-hidden="true"></div>
+              <!--
+                FIX: aria-live removed from button — belongs on a container element
+              -->
+              <span class="blabel">🚀 Send Join Request</span>
+            </button>
+            <p class="policy">
+              By submitting you agree the host may approve or decline your request.<br>
+              No payment is taken until your spot is confirmed.
+            </p>
+          </div>
+
+        </form>
+      </div>
+    </main>
+
+  </div><!-- /.page-body -->
+
+  <!-- SR live region for announcements -->
+  <div id="srLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    /* ══════════════════════════════
+       THEME
+    ══════════════════════════════ */
+    const root   = document.documentElement;
+    const tBtn   = document.getElementById('themeToggle');
+    const THEMES = ['default', 'dark'];
+    const ICONS  = { default: '☀️', dark: '🌙' };
+    let currentTheme = localStorage.getItem('tb_theme') || 'default';
+
+    function applyTheme(t) {
+      currentTheme = t;
+      t === 'default' ? root.removeAttribute('data-theme') : root.setAttribute('data-theme', t);
+      if (tBtn) {
+        tBtn.textContent = ICONS[t];
+        tBtn.setAttribute('aria-pressed', t !== 'default' ? 'true' : 'false');
+        tBtn.setAttribute('aria-label', 'Toggle color theme (current: ' + t + ')');
+      }
+      localStorage.setItem('tb_theme', t);
+    }
+    applyTheme(currentTheme);
+    tBtn?.addEventListener('click', () => {
+      applyTheme(THEMES[(THEMES.indexOf(currentTheme) + 1) % THEMES.length]);
+    });
+
+    /* ══════════════════════════════
+       BACK BUTTONS
+       FIX: javascript:history.back() replaced
+    ══════════════════════════════ */
+    function goBack() {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = '/main';
+      }
+    }
+    document.getElementById('backBtn')?.addEventListener('click', goBack);
+    document.getElementById('overlayBackBtn')?.addEventListener('click', () => {
+      hideOverlay();
+      goBack();
+    });
+
+    /* ══════════════════════════════
+       FORM REFS
+    ══════════════════════════════ */
+    const form       = document.getElementById('joinForm');
+    const submitBtn  = document.getElementById('submitBtn');
+    const formAlert  = document.getElementById('formAlert');
+    const formAlertText = document.getElementById('formAlertText');
+    const overlay    = document.getElementById('successOverlay');
+    const srLive     = document.getElementById('srLive');
+
+    /* ══════════════════════════════
+       FIELD HELPERS
+    ══════════════════════════════ */
+    function setFieldErr(inputId, errId, show, msg) {
+      const el = document.getElementById(inputId);
+      const errEl = document.getElementById(errId);
+      if (!el || !errEl) return;
+      el.classList.toggle('err', show);
+      el.setAttribute('aria-invalid', show ? 'true' : 'false');
+      errEl.classList.toggle('show', show);
+      if (show && msg) {
+        // Update only the text node, preserving the icon
+        const nodes = errEl.childNodes;
+        nodes.forEach(n => { if (n.nodeType === 3) n.textContent = ' ' + msg; });
+      }
+    }
+
+    function attachClearOnInput(inputId, errId) {
+      document.getElementById(inputId)?.addEventListener('input', () => {
+        setFieldErr(inputId, errId, false);
+        formAlert.classList.remove('visible');
+      });
+    }
+    attachClearOnInput('member_name', 'name-err');
+    attachClearOnInput('contact_no',  'contact-err');
+    attachClearOnInput('address',     'addr-err');
+    attachClearOnInput('language',    'lang-err');
+
+    /* Blur validation */
+    document.getElementById('member_name')?.addEventListener('blur', () => {
+      const v = document.getElementById('member_name').value.trim();
+      if (v) setFieldErr('member_name', 'name-err', false);
+    });
+
+    /* ══════════════════════════════
+       VALIDATION
+       FIX: Phone regex improved — strips formatting, then checks digit count
+    ══════════════════════════════ */
+    function isValidPhone(raw) {
+      const stripped = raw.replace(/[\s\-\(\)]/g, '');
+      // 7–15 digits optionally prefixed with +
+      return /^\+?\d{7,15}$/.test(stripped);
+    }
+
+    function validateForm() {
+      let isValid = true;
+      const fields = [
+        { id: 'member_name', errId: 'name-err', msg: 'Full name is required.',     check: v => !!v },
+        { id: 'language',    errId: 'lang-err', msg: 'At least one language.',      check: v => !!v },
+        { id: 'address',     errId: 'addr-err', msg: 'Address is required.',        check: v => !!v },
+      ];
+      fields.forEach(({ id, errId, msg, check }) => {
+        const el = document.getElementById(id);
+        const v  = el ? el.value.trim() : '';
+        const ok = check(v);
+        setFieldErr(id, errId, !ok, msg);
+        if (!ok) isValid = false;
+      });
+
+      // Phone special case
+      const phone = document.getElementById('contact_no')?.value.trim() || '';
+      if (!phone || !isValidPhone(phone)) {
+        setFieldErr('contact_no', 'contact-err', true, 'Enter a valid phone number (7–15 digits).');
+        isValid = false;
+      } else {
+        setFieldErr('contact_no', 'contact-err', false);
+      }
+
+      if (!isValid) {
+        const firstErr = form.querySelector('.err');
+        firstErr?.focus();
+      }
+      return isValid;
+    }
+
+    /* ══════════════════════════════
+       GLOBAL ALERT HELPERS
+    ══════════════════════════════ */
+    function showAlert(msg) {
+      formAlertText.textContent = msg;
+      formAlert.classList.add('visible');
+      formAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function hideAlert() { formAlert.classList.remove('visible'); }
+
+    /* ══════════════════════════════
+       FORM SUBMIT
+    ══════════════════════════════ */
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+      if (!validateForm()) {
+        showAlert('Please fix the errors above before submitting.');
+        return;
+      }
+
+      const btnLabel = submitBtn.querySelector('.blabel');
+      submitBtn.setAttribute('aria-busy', 'true');
+      submitBtn.disabled = true;
+      if (btnLabel) btnLabel.textContent = 'Sending…';
+
+      const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+      try {
+        const fd  = new FormData(form);
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(csrf ? { 'X-CSRF-Token': csrf } : {})
+          }
+        });
+
+        /*
+          FIX: Check Content-Type before calling res.json()
+          FIX: res.redirected is unreliable for same-origin redirects; check JSON redirect flag instead
+        */
+        const contentType = res.headers.get('Content-Type') || '';
+        let data = null;
+        if (contentType.includes('application/json')) {
+          data = await res.json().catch(() => null);
+        }
+
+        if (res.ok) {
+          if (data?.redirect) { window.location.href = data.redirect; return; }
+          if (data?.error)    { throw new Error(data.error); }
+          showSuccess();
+        } else {
+          let msg = 'Submission failed. Please try again.';
+          if (res.status === 403) msg = 'Session expired — please refresh the page.';
+          if (res.status === 400) msg = 'Invalid data. Please check your inputs.';
+          if (res.status === 409) msg = 'No spots remaining on this trip.';
+          if (data?.error) msg = data.error;
+          throw new Error(msg);
+        }
+      } catch (err) {
+        console.error('Join submit error:', err);
+        showAlert(err.message || 'Network error. Please check your connection and try again.');
+        submitBtn.setAttribute('aria-busy', 'false');
+        submitBtn.disabled = false;
+        if (btnLabel) btnLabel.textContent = '🚀 Send Join Request';
+      }
+    });
+
+    /* ══════════════════════════════
+       SUCCESS OVERLAY
+       FIX: Proper focus management + focus trap
+    ══════════════════════════════ */
+    let focusBeforeOverlay = null;
+
+    function showSuccess() {
+      focusBeforeOverlay = document.activeElement;
+      overlay.classList.remove('hidden');
+      // FIX: Focus the dialog heading, not just querySelector('a')
+      const heading = document.getElementById('successTitle');
+      heading?.focus();
+      srLive.textContent = 'Success! Your join request has been sent.';
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      // Return focus to what was focused before overlay opened
+      if (focusBeforeOverlay) focusBeforeOverlay.focus();
+    }
+
+    // FIX: Focus trap within overlay
+    overlay?.addEventListener('keydown', (e) => {
+      if (overlay.classList.contains('hidden')) return;
+      const focusable = overlay.querySelectorAll('button, a, [tabindex="-1"]');
+      const first = focusable[0];
+      const last  = focusable[focusable.length - 1];
+      if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault(); last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault(); first?.focus();
+        }
+      }
+      if (e.key === 'Escape') hideOverlay();
+    });
+
+    // Click outside to dismiss
+    overlay?.addEventListener('click', (e) => {
+      if (e.target === overlay) hideOverlay();
+    });
+
+    /* ══════════════════════════════
+       STAGGERED ENTRANCE ANIMATION
+    ══════════════════════════════ */
+    document.querySelectorAll('.detail-pill').forEach((el, i) => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(10px)';
+      el.style.transition = `opacity .3s ${.1 + i * .07}s ease, transform .3s ${.1 + i * .07}s ease`;
+      requestAnimationFrame(() => {
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
+      });
+    });
+  })();
+  </script>
+</body>
+</html>
